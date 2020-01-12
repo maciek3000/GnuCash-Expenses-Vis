@@ -1,6 +1,10 @@
-#GnuCash Expenses Viz
+# GnuCash Expenses Viz
 
 gnucash_files
+
+# flask files
+
+instance/
 
 # Python files
 
