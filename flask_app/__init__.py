@@ -1,5 +1,6 @@
 import os
 from flask import Flask, render_template
+from bokeh.embed import server_document
 
 
 def create_app(test_config=None):
@@ -19,8 +20,17 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    from .bkapp.bkapp import BokehApp, bkworker
+    #bkapp_instance = BokehApp(os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash'))
+
+    from threading import Thread
+    Thread(target=bkworker).start()
+
+
+
     @app.route('/')
     def index():
-        return render_template('index.html')
+        script = server_document('http://127.0.0.1:9090/provide')
+        return render_template('index.html', script=script)
 
     return app

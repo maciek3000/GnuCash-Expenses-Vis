@@ -9,7 +9,7 @@ class ColumnMapper(object):
     def __init__(self, column_names):
         attr_list = ['name', 'date', 'split', 'account', 'price', 'currency', 'product', 'shop', 'all',
                      'type', 'category', 'subcategory', 'subtype', 'monthyear']
-        for attr, val in (attr_list, column_names):
+        for attr, val in zip(attr_list, column_names):
             setattr(self, attr, val)
 
 
@@ -99,7 +99,7 @@ class GnuCashDBParser(object):
         df[self.col_map.category] = df[self.col_map.all].apply(lambda x: x[-1])
         df[self.col_map.subcategory] = df[self.col_map.all].apply(lambda x: ':'.join(x[2:-1]) if len(x[2:-1]) > 0
                                                                   else np.nan)
-        df[self.col_map.subtype] = df[self.col_map.all].apply(lambda x: self._check_name_for_sub_type(names))
+        df[self.col_map.subtype] = df[self.col_map.all].apply(lambda x: self._check_name_for_sub_type(x, names))
 
         # formatting Price and Date
         df[self.col_map.price] = df[self.col_map.price].apply(lambda x: float(x))
@@ -113,7 +113,7 @@ class GnuCashDBParser(object):
 
         return df
 
-    def __check_name_for_sub_type(self, string_list, names):
+    def _check_name_for_sub_type(self, string_list, names):
         """Checks for name from names in list of strings.
             Only checks from the 3rd value up to one before last [2:-1].
 
@@ -126,4 +126,4 @@ class GnuCashDBParser(object):
         return return_string
 
     def get_df(self):
-        return self.expensed_df
+        return self.expenses_df
