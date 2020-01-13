@@ -34,3 +34,8 @@ def create_app(test_config=None):
         return render_template('index.html', script=script)
 
     return app
+
+if __name__ == '__main__':
+    pass
+    #app = create_app()
+    #app.run()

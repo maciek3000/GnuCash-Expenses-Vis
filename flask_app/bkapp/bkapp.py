@@ -1,8 +1,11 @@
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, Slider
 from bokeh.plotting import figure
 from bokeh.server.server import Server
+from bokeh.themes import Theme
+from bokeh.layouts import column
 from ..gnucash.gnucash_db_parser import GnuCashDBParser
 from tornado.ioloop import IOLoop
+import os
 
 class BokehApp(object):
 
@@ -27,9 +30,22 @@ def provide_viz(doc):
                   title="Sea Surface Temperature at 43.18, -70.43")
     plot.line('time', 'temperature', source=source)
 
+    def callback(attr, old, new):
+        if new == 0:
+            data = df
+        else:
+            data = df.rolling('{0}D'.format(new)).mean()
+        source.data = ColumnDataSource(data=data).data
+
+    slider = Slider(start=0, end=30, value=0, step=1, title="Smoothing by N Days")
+    slider.on_change('value', callback)
+
+    doc.add_root(column(slider, plot))
+
+    doc.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
 def bkworker():
-    server = Server({'/provide': provide_viz}, io_loop=IOLoop(), allow_websocket_origin=['127.0.0.1:8000', '127.0.0.1:9090'],
+    server = Server({'/provide': provide_viz}, io_loop=IOLoop(), allow_websocket_origin=['127.0.0.1:5000', '127.0.0.1:9090'],
                     port=9090)
     server.start()
     server.io_loop.start()
