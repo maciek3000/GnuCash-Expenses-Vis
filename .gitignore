@@ -2,9 +2,6 @@
 
 gnucash_files/
 
-# flask files
-
-instance/
 
 # Python files
 
@@ -137,3 +134,15 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+inspection/
+codestyles/
+_windows/
+
+colors.scheme.xml
+debugger.xml
+editor.xml
+filetypes.xml
+markdown.xml
+ui.lnf.xml
+vcs.xml
