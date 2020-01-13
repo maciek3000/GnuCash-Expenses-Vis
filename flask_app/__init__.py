@@ -20,13 +20,16 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    from .bkapp.bkapp import BokehApp, bkworker
-    #bkapp_instance = BokehApp(os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash'))
+    from .bkapp.bkapp import BokehApp
+
+    # test file and names, later on it will be provided by the user
+    bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash')
+    bk_port = 9090
+    bk_names = ['Maciek', 'Justyna']
+    bkapp = BokehApp(bk_file_path_db, bk_port, bk_names)
 
     from threading import Thread
-    Thread(target=bkworker).start()
-
-
+    Thread(target=bkapp.bkworker).start()
 
     @app.route('/')
     def index():
@@ -34,8 +37,3 @@ def create_app(test_config=None):
         return render_template('index.html', script=script)
 
     return app
-
-if __name__ == '__main__':
-    pass
-    #app = create_app()
-    #app.run()
