@@ -146,3 +146,5 @@ filetypes.xml
 markdown.xml
 ui.lnf.xml
 vcs.xml
+Default.xml
+baseRefactoring.xml
