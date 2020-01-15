@@ -24,12 +24,19 @@ def create_app(test_config=None):
 
     # test file and names, later on it will be provided by the user
     bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash')
-    bk_port = 9090
     bk_names = ['Maciek', 'Justyna']
+
+    bk_port = 9090
+    bkapp_server_address = 'http://127.0.0.1:9090/'
     bkapp = BokehApp(bk_file_path_db, bk_port, bk_names)
 
     from threading import Thread
     Thread(target=bkapp.bkworker).start()
+
+    from .monthly import create_bp
+
+    bp_monthly = create_bp(bkapp_server_address)
+    app.register_blueprint(bp_monthly)
 
     @app.route('/')
     def index():
