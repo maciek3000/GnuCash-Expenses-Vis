@@ -1,0 +1,8 @@
+/* base color: #316B85 */
+
+html { font-family: "Lato", sans-serif; background: white; padding: 1rem; }
+body { max-width: 1280px; margin: 0 auto; background: white; border: 1px solid #316B85; }
+.menu { display: flex; flex-direction: row; align-items: center; justify-content: flex-end; border: 1px solid black;
+        font-size: 1.5em; }
+.menu div { border: 1px solid black; }
+.menu:first-child {margin-left: auto; }
