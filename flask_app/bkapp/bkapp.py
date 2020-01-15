@@ -12,7 +12,7 @@ class BokehApp(object):
         self.datasource = GnuCashDBParser(file_path, names=names).get_df()
         self.port = port
 
-    def provide_viz(self, doc):
+    def trends(self, doc):
 
         agg = self.datasource.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
         source = ColumnDataSource(agg)
@@ -24,7 +24,7 @@ class BokehApp(object):
         doc.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
     def bkworker(self):
-        server = Server({'/provide': self.provide_viz}, io_loop=IOLoop(), allow_websocket_origin=['127.0.0.1:5000'],
+        server = Server({'/trends': self.trends}, io_loop=IOLoop(), allow_websocket_origin=['127.0.0.1:5000'],
                         port=self.port)
         server.start()
         server.io_loop.start()

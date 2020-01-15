@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block header %}
-    <h1>{% block title %}Index{% endblock %}</h1>
+    <h1>{% block title %}Overview{% endblock %}</h1>
 {% endblock %}
 
 {% block content %}
@@ -9,7 +9,7 @@
     <div>
         <p>Visualizations will be here</p>
     </div>
-    <div id="embed">
-        {{ script|safe }}
+    <div>
+        Overview, address: {{ address }}
     </div>
 {% endblock %}

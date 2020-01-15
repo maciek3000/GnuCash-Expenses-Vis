@@ -20,6 +20,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
+    # bkapp section
+
     from .bkapp.bkapp import BokehApp
 
     # test file and names, later on it will be provided by the user
@@ -33,14 +35,24 @@ def create_app(test_config=None):
     from threading import Thread
     Thread(target=bkapp.bkworker).start()
 
-    from .monthly import create_bp
+    # Blueprints section
 
-    bp_monthly = create_bp(bkapp_server_address)
-    app.register_blueprint(bp_monthly)
+    from . import trends, overview, category
 
-    @app.route('/')
-    def index():
-        script = server_document('http://127.0.0.1:9090/provide')
-        return render_template('index.html', script=script)
+    bp_trends = trends.create_bp(bkapp_server_address)
+    bp_overview = overview.create_bp(bkapp_server_address)
+    bp_category = category.create_bp(bkapp_server_address)
+
+    app.register_blueprint(bp_trends)
+    app.register_blueprint(bp_overview)
+    app.register_blueprint(bp_category)
+
+    app.add_url_rule('/', endpoint='overview')
+
+
+    #@app.route('/')
+    #def index():
+    #    script = server_document('http://127.0.0.1:9090/trends')
+    #    return render_template('overview.html', script=script)
 
     return app
