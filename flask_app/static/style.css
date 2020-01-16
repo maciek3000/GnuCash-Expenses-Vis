@@ -2,7 +2,7 @@
 
 html { font-family: "Lato", sans-serif; background: white; padding: 1rem; }
 
-body { max-width: 1280px;
+.main { max-width: 1280px;
        margin: 0 auto;
        background: white;
        border: 2px solid #D1DCEB;
@@ -37,5 +37,20 @@ body { max-width: 1280px;
 
 /* content */
 
-.content {border: 0px solid black;
-          padding: 4px 4px;  }
+.content {border: 0px solid red;
+          padding: 12px 12px;
+          position: relative; }
+
+.content-container {display: flex;
+                    flex-direction: row; }
+
+.text {color: #C7C3C3; }
+.text .title {color: #8C8C8C; font-size: 2em; font-weight: bold; }
+.text div {padding: 2px 2px; }
+
+
+
+/* view-specific */
+#overview_text {border: 0px solid black; width: 30%; }
+#overview_barplot {border: 0px solid black; width: 70%;}
+#overview_barplot div {text-align: right; }

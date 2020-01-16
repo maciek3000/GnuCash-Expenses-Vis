@@ -1,15 +1,28 @@
 {% extends 'base.html' %}
 
-{% block header %}
-    <h1>{% block title %}Overview{% endblock %}</h1>
-{% endblock %}
+{% block title %}Overview{% endblock %}
 
 {% block content %}
-    <h1>Hello</h1>
-    <div>
-        <p>Visualizations will be here</p>
+<div class="content-container">
+    <div class="text" id="overview_text">
+        <div class="title">Overview of Expenses</div>
+        <div>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis aliquet varius pharetra.
+                Vivamus id vehicula massa, eu porttitor libero. Aliquam eget varius nulla, et porttitor nisi.
+                Quisque molestie vulputate libero a fringilla. Quisque molestie porta nibh ac imperdiet.
+                Fusce aliquam nec mi id interdum. Ut vulputate consequat dapibus.
+                Donec nec neque aliquam, mollis leo eu, cursus augue. Aenean sagittis laoreet turpis eget sodales.
+                Vivamus in turpis nec tellus maximus feugiat vitae sed mi. Sed blandit mi magna, ut vehicula odio
+                hendrerit ultricies. Donec eu cursus ligula. Quisque vel ipsum ut neque varius mollis ut et nisi.
+                Nam rhoncus sit amet odio ac dignissim. Vivamus sit amet augue metus. Sed eu lacus quis erat
+                fermentum faucibus eget eu quam.
+            </p>
+        </div>
     </div>
-    <div>
-        Overview, address: {{ address }}
+    <div class="plot" id="overview_barplot">
+        <div>
+            {{script|safe}}
+        </div>
     </div>
+</div>
 {% endblock %}
