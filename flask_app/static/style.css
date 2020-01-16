@@ -46,11 +46,11 @@ html { font-family: "Lato", sans-serif; background: white; padding: 1rem; }
 
 .text {color: #C7C3C3; }
 .text .title {color: #8C8C8C; font-size: 2em; font-weight: bold; }
-.text div {padding: 2px 2px; }
+.text div:not(.title) {padding: 2px 2px; text-align: justify; }
 
 
 
 /* view-specific */
 #overview_text {border: 0px solid black; width: 30%; }
 #overview_barplot {border: 0px solid black; width: 70%;}
-#overview_barplot div {text-align: right; }
+#overview_barplot div {float: right; }
