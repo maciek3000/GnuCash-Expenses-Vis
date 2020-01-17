@@ -1,5 +1,5 @@
 from bokeh.models import ColumnDataSource, NumeralTickFormatter
-from bokeh.models.widgets import Dropdown, Select
+from bokeh.models.widgets import Dropdown, Select, Div
 from bokeh.plotting import figure, curdoc
 from bokeh.server.server import Server
 from bokeh.themes import Theme
@@ -16,6 +16,7 @@ class BokehApp(object):
         self.views = {
             '/trends': self.trends,
             '/category': self.category,
+            '/some_data': self.some_data,
         }
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
@@ -84,11 +85,15 @@ class BokehApp(object):
         doc.add_root(column(dropdown, p))
         doc.theme = self.theme
 
-    def some_data(self):
+    def some_data(self, doc):
         agg = self.datasource.groupby(['MonthYear']).sum().reset_index()
 
         val = agg['Price'].mean()
-        return val
+        text = 'Average expenses are: <p style="color:#9c2b19"> {} </p>'.format(val)
+        t = Div(text=text, id="some_data_text")
+
+        doc.add_root(t)
+        doc.theme = self.theme
 
     def bkworker(self):
         server = Server(self.views, io_loop=IOLoop(),
