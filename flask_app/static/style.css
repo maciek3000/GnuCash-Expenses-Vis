@@ -57,3 +57,7 @@ html { font-family: "Lato", sans-serif; background: white; padding: 1rem; }
 
 #overview_text {border: 0px solid black; width: 40%; }
 #overview_stats {border: 0px solid black; width: 60%; text-align: center; }
+
+#category_text {border: 0px solid black; width: 30%; }
+#category_barplot {border: 0px solid black; width: 70%;}
+#category_barplot div {float: right; }
