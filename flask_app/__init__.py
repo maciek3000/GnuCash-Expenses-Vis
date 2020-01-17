@@ -40,7 +40,7 @@ def create_app(test_config=None):
     from . import trends, overview, category
 
     bp_trends = trends.create_bp(bkapp_server_address)
-    bp_overview = overview.create_bp(bkapp_server_address)
+    bp_overview = overview.create_bp(bkapp.some_data())
     bp_category = category.create_bp(bkapp_server_address)
 
     app.register_blueprint(bp_trends)

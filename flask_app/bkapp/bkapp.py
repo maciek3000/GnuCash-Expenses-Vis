@@ -1,4 +1,4 @@
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, NumeralTickFormatter
 from bokeh.plotting import figure, curdoc
 from bokeh.server.server import Server
 from bokeh.themes import Theme
@@ -13,7 +13,6 @@ class BokehApp(object):
         self.port = port
         self.views = {
             '/trends': self.trends,
-            '/some_data': self.some_data
         }
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
@@ -23,17 +22,29 @@ class BokehApp(object):
         source = ColumnDataSource(agg)
 
         p = figure(width=480, height=480, x_range=agg['MonthYear'])
-        p.vbar(x='MonthYear', width=0.9, top='Price', source=source)
+        p.vbar(x='MonthYear', width=0.9, top='Price', source=source, color='#8CA8CD')
+
+        p.xaxis.major_tick_line_color = None
+        p.xaxis.minor_tick_line_color = None
+        p.yaxis.major_tick_line_color = None
+        p.yaxis.minor_tick_line_color = None
+
+        p.yaxis[0].formatter = NumeralTickFormatter(format="0.0a")
+
+        p.xaxis.axis_line_color = "#C7C3C3"
+        p.yaxis.axis_line_color = "#C7C3C3"
+
+        p.xaxis.major_label_text_color = "#8C8C8C"
+        p.yaxis.major_label_text_color = "#8C8C8C"
 
         doc.add_root(p)
         doc.theme = self.theme
 
-    def some_data(self, doc):
-        agg = self.datasource.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
+    def some_data(self):
+        agg = self.datasource.groupby(['MonthYear']).sum().reset_index()
 
         val = agg['Price'].mean()
-        print(val)
-        doc.template_variables['val'] = val
+        return val
 
     def bkworker(self):
         server = Server(self.views, io_loop=IOLoop(),

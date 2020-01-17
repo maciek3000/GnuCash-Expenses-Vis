@@ -7,7 +7,7 @@ def create_bp(bkapp_server_address):
 
     @bp.route('/trends')
     def trends():
-        t = server_document(bkapp_server_address + 'some_data')
-        return render_template('trends.html', val = t)
+        script = server_document(bkapp_server_address + 'trends')
+        return render_template('trends.html', script = script)
 
     return bp
