@@ -2,6 +2,7 @@ from piecash import Account, create_book, Transaction, Split
 import pandas as pd
 import random
 from decimal import Decimal
+import os
 
 
 class GnucashExampleCreator(object):
@@ -105,7 +106,7 @@ class GnucashExampleCreator(object):
         ]
 
         shops = ["Grocery Shop #1", "Grocery Shop #2"]
-        shop_items = (high_proba_list, )
+        shop_items = (high_proba_list,)
 
         self.__create_transactions(book, self.date_range, stuff, curr, probas, fixed_transactions, shops, shop_items)
         book.save()
@@ -125,7 +126,6 @@ class GnucashExampleCreator(object):
                         fixed_transaction_list = self.__extract_data(stuff, fixed_to_account)
                         for fixed_transaction in fixed_transaction_list:
                             self.__add_transaction(book, date, currency, fixed_to_account, fixed_transaction)
-
 
             for _ in probas:
 
@@ -149,8 +149,6 @@ class GnucashExampleCreator(object):
                         for transaction in transaction_list:
                             if random.random() <= proba:
                                 self.__add_transaction(book, date, currency, to_account, transaction)
-
-
 
     def __extract_data(self, d, acc):
 
@@ -192,7 +190,6 @@ class GnucashExampleCreator(object):
 
         book.flush()
 
-
     def __add_shop_transaction(self, book, date, currency, list_of_splits, shop_name):
 
         sp_list = []
@@ -220,7 +217,8 @@ class GnucashExampleCreator(object):
 
 
 if __name__ == "__main__":
-    file_path = "gnucash_examples/example_gnucash.gnucash"
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    file_path = os.path.join(dir_path, "gnucash_examples", "example_gnucash.gnucash")
     currency = "PLN"
     example_creator = GnucashExampleCreator(file_path, currency)
     example_creator.create_example_book()
