@@ -69,3 +69,40 @@ def test_add_transaction(gnucash_creator, book, from_account, to_account, date, 
             assert (price_range[0] <= to_value) and (to_value <= price_range[1])
         else:
             assert to_value == price_range[0]
+
+
+@pytest.mark.parametrize(
+    ("date", "shop_name", "transaction_list"),
+    (date(2019, 1, 1), "Grocery Test Shop #1", [("Transaction #1", (300,)), ("Transaction #2", (400,))]),
+    (date(2019, 2, 1), "Grocery Test Shop #2", [("Transaction #1", (400, 500)), ("Transaction #2", (1, 2))])
+)
+def test_add_shop_transaction_same_asset(gnucash_creator, book, from_account, to_account, to_account_two,
+                                         date, shop_name, transaction_list):
+    assert len(book.transactions) == 0
+
+    currency = book.default_currency
+    #split = (to_account, (description, from_account, price_range))
+    list_of_splits = []
+    list_of_transaction_names = []
+    list_of_price_ranges = []
+
+    for acc, transaction in zip([to_account, to_account_two], transaction_list):
+        desc = transaction[0]
+        single_price_range = transaction[1]
+        list_of_transaction_names.append(desc)
+        list_of_price_ranges.append(single_price_range)
+        list_of_splits.append((acc, (desc, from_account, single_price_range)))
+
+    func = gnucash_creator._GnucashExampleCreator__add_shop_transaction
+    func(book, date, currency, list_of_splits, shop_name)
+
+    assert len(book.transactions) == 1
+
+    for tr in book.transactions:
+        assert tr.description == shop_name
+        assert tr.post_date == date
+
+        for split in tr.splits:
+            assert split.memo.strip() in list_of_transaction_names
+
+

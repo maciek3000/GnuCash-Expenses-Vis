@@ -16,7 +16,6 @@ def gnucash_creator():
 def book():
     book = piecash.create_book(currency="PLN")
     book.save()
-
     return book
 
 @pytest.fixture
@@ -28,5 +27,17 @@ def to_account(book):
 @pytest.fixture
 def from_account(book):
     from_account = piecash.Account("Test Asset Account", "ASSET", book.default_currency, parent=book.root_account)
+    book.save()
+    return from_account
+
+@pytest.fixture
+def to_account_two(book):
+    to_account = piecash.Account("Test Expense Account 2", "EXPENSE", book.default_currency, parent=book.root_account)
+    book.save()
+    return to_account
+
+@pytest.fixture
+def from_account_two(book):
+    from_account = piecash.Account("Test Asset Account 2", "ASSET", book.default_currency, parent=book.root_account)
     book.save()
     return from_account
