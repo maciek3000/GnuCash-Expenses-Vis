@@ -3,12 +3,13 @@ import pandas as pd
 import random
 from decimal import Decimal
 import os
+from collections import OrderedDict
 
 
 class GnucashExampleCreator(object):
 
     def __init__(self, file_path, currency, low_proba_value=0.05, medium_proba_value=0.3, high_proba_value=0.6,
-                 shop_proba_value=0.4, date_range=pd.date_range("01-Jan-2019", "31-Dec-2019"), seed=1010):
+                 shop_proba_value=0.4, date_range=pd.date_range("01-Jan-2019", "31-Dec-2019"), seed=42):
 
         self.file_path = file_path
         self.currency = currency
@@ -18,7 +19,9 @@ class GnucashExampleCreator(object):
         self.shop_proba = shop_proba_value
         self.date_range = date_range
 
-        random.seed(seed)
+
+        self.rng = random.Random()
+        self.rng.seed(seed)
 
     def create_example_book(self):
 
@@ -59,35 +62,42 @@ class GnucashExampleCreator(object):
 
         book.save()
 
-        stuff = {
-            john_acc: {("Salary", john_income): (3000,)},
-            susan_acc: {("Salary", susan_income): (3000,)},
-            family_acc: {("Transaction", john_acc): (500,),
-                         ("Transaction", susan_acc): (500,)},
-            clothes_john: {("Clothes", john_acc): (100, 350)},
-            clothes_susan: {("Clothes", susan_acc): (100, 350)},
-            bread: {("White Bread", family_acc): (1, 4),
-                    ("Rye Bread", family_acc): (3, 6),
-                    ("Butter", family_acc): (4, 7)},
-            meat: {("Chicken", family_acc): (9, 16),
-                   ("Cow", family_acc): (15, 30)},
-            eggs: {("Eggs", family_acc): (8, 16)},
-            chips: {("Chips", family_acc): (5, 17),
-                    ("Lollipops", family_acc): (1, 2)},
-            fruits: {("Apple", family_acc): (3, 5),
-                     ("Banana", family_acc): (5, 7),
-                     ("Tomato", family_acc): (2, 4),
-                     ("Pear", family_acc): (3, 5)},
-            petrol: {("Petrol", family_acc): (50, 250)},
-            rent: {("Rent", family_acc): (2000,)},
-            water: {("Water and Electricity", family_acc): (20, 150)},
-            toilet: {("Toilet Paper", family_acc): (5, 15),
-                     ("Facial Tissues", family_acc): (2, 8)},
-            personal_john: {("Beard Balm", john_acc): (15, 50)},
-            personal_susan: {("Shampoo", susan_acc): (10, 15),
-                             ("Face Cleanser", susan_acc): (10, 13)},
-            other: {("Other", family_acc): (1, 100)}
-        }
+        acc_list = [john_acc, susan_acc, family_acc, clothes_john, clothes_susan, bread, meat, eggs,
+                    chips, fruits, petrol, rent, water, toilet, personal_john, personal_susan, other]
+
+        planned_tr_list = [
+            ((("Salary", john_income), (3000,)),),
+            ((("Salary", susan_income), (3000,)),),
+            ((("Transaction", john_acc), (500,)),
+             (("Transaction", susan_acc), (500,))),
+            ((("Clothes", john_acc), (100, 350)),),
+            ((("Clothes", john_acc), (100, 350)),),
+            ((("White Bread", family_acc), (1, 4)),
+             (("Rye Bread", family_acc), (3, 6)),
+             (("Butter", family_acc), (4, 7))),
+            ((("Chicken", family_acc), (9, 16)),
+             (("Cow", family_acc), (15, 30))),
+            ((("Eggs", family_acc), (8, 16)),),
+            ((("Chips", family_acc), (5, 17)),
+             (("Lollipops", family_acc), (1, 2))),
+            ((("Apple", family_acc), (3, 5)),
+             (("Banana", family_acc), (5, 7)),
+             (("Tomato", family_acc), (2, 4)),
+             (("Pear", family_acc), (3, 5))),
+            ((("Petrol", family_acc), (50, 250)),),
+            ((("Rent", family_acc), (2000,)),),
+            ((("Water and Electricity", family_acc), (20, 150)),),
+            ((("Toilet Paper", family_acc), (5, 15)),
+             (("Facial Tissues", family_acc),  (2, 8))),
+            ((("Beard Balm", john_acc), (15, 50)),),
+            ((("Shampoo", susan_acc),  (10, 15)),
+             (("Face Cleanser", susan_acc), (10, 13))),
+            ((("Other", family_acc), (1, 100)),)
+        ]
+
+        planned_tr_list = map(OrderedDict, planned_tr_list)
+        stuff = OrderedDict(zip(acc_list, planned_tr_list))
+
 
         low_proba_list = [clothes_john, clothes_susan, petrol, toilet, personal_john, personal_susan]
         medium_proba_list = [meat, chips, other]
@@ -132,13 +142,13 @@ class GnucashExampleCreator(object):
                 to_account_list = _[0]
                 proba = _[1]
 
-                if to_account_list in shop_items and random.random() <= self.shop_proba:
-                    shop_description = random.choice(shops)
+                if to_account_list in shop_items and self.rng.random() <= self.shop_proba:
+                    shop_description = self.rng.choice(shops)
                     list_of_splits = []
                     for to_account in to_account_list:
                         transaction_list = self.__extract_data(stuff, to_account)
                         for transaction in transaction_list:
-                            if random.random() <= proba:
+                            if self.rng.random() <= proba:
                                 list_of_splits.append((to_account, transaction))
 
                     if len(list_of_splits) > 0:
@@ -147,7 +157,7 @@ class GnucashExampleCreator(object):
                     for to_account in to_account_list:
                         transaction_list = self.__extract_data(stuff, to_account)
                         for transaction in transaction_list:
-                            if random.random() <= proba:
+                            if self.rng.random() <= proba:
                                 self.__add_transaction(book, date, currency, to_account, transaction)
 
     def __extract_data(self, d, acc):
@@ -175,7 +185,7 @@ class GnucashExampleCreator(object):
         description, from_account, price_range = transaction
 
         if len(price_range) > 1:
-            value = random.uniform(price_range[0], price_range[1])
+            value = self.rng.uniform(price_range[0], price_range[1])
         else:
             value = price_range[0]
 
@@ -199,7 +209,7 @@ class GnucashExampleCreator(object):
             description, from_account, price_range = split[1]
 
             if len(price_range) > 1:
-                value = random.uniform(price_range[0], price_range[1])
+                value = self.rng.uniform(price_range[0], price_range[1])
             else:
                 value = price_range[0]
             price = Decimal(str(round(value, 2)))

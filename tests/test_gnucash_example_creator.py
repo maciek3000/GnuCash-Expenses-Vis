@@ -165,6 +165,7 @@ def test_add_shop_transaction_different_asset(gnucash_creator, book, from_accoun
 
 
 def test_create_book(gnucash_creator):
+
     gnucash_creator.create_example_book()
 
     example_file_dir = os.path.split(os.path.dirname(os.path.realpath(__file__)))[0]
@@ -177,21 +178,20 @@ def test_create_book(gnucash_creator):
 
     shop_names = ["Grocery Shop #1", "Grocery Shop #2"]
     compare_list = []
-    shop_list = []
+    tr_list = []
     for book in (test_book, compare_book):
         total_price = 0
-        shop_dict = Counter()
+        tr_dict = Counter()
         for tr in book.transactions:
             for sp in tr.splits:
                 if sp.account.type == "EXPENSE":
-                    total_price += float(sp.value)
-            if tr.description in shop_names:
-                shop_dict[tr.description] += 1
+                    total_price += round(float(sp.value), 2)
+            tr_dict[tr.description] += 1
         compare_list.append(total_price)
-        shop_list.append(shop_dict)
+        tr_list.append(tr_dict)
 
-    #assert compare_list[0] == compare_list[1]
+    assert compare_list[0] == compare_list[1]
 
-    for key in shop_list[0]:
-        assert key in shop_list[1]
-        assert shop_list[0][key] == shop_list[1][key]
+    for key in tr_list[0]:
+        assert key in tr_list[1]
+        assert tr_list[0][key] == tr_list[1][key]

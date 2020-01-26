@@ -10,7 +10,7 @@ from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
 def gnucash_creator():
     example_fd, example_path = tempfile.mkstemp()
     currency = "PLN"
-    seed = 1010
+    seed = 42
     yield GnucashExampleCreator(example_path, currency, seed=seed)
 
     os.close(example_fd)
