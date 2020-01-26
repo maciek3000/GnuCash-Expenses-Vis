@@ -1,6 +1,7 @@
 import pytest
 import piecash
 import tempfile
+import os
 from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
 
 # ----- gnucash_example_creator ----- #
@@ -10,7 +11,10 @@ def gnucash_creator():
     example_fd, example_path = tempfile.mkstemp()
     currency = "PLN"
     seed = 1010
-    return GnucashExampleCreator(example_path, currency, seed=1010)
+    yield GnucashExampleCreator(example_path, currency, seed=seed)
+
+    os.close(example_fd)
+    os.unlink(example_path)
 
 @pytest.fixture
 def book():

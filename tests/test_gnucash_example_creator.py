@@ -1,4 +1,7 @@
 import pytest
+import piecash
+import os
+from collections import Counter
 from datetime import date
 
 
@@ -13,7 +16,7 @@ def test_extract_data_single_transaction(gnucash_creator, key, output):
     }
 
     func = gnucash_creator._GnucashExampleCreator__extract_data
-    result= func(test_dict, key)[0]
+    result = func(test_dict, key)[0]
     assert result[0] == output[0]
     assert result[1] == output[1]
     assert result[2] == output[2]
@@ -73,15 +76,13 @@ def test_add_transaction(gnucash_creator, book, from_account, to_account, date, 
 
 @pytest.mark.parametrize(
     ("date", "shop_name", "transaction_list"),
-    (date(2019, 1, 1), "Grocery Test Shop #1", [("Transaction #1", (300,)), ("Transaction #2", (400,))]),
-    (date(2019, 2, 1), "Grocery Test Shop #2", [("Transaction #1", (400, 500)), ("Transaction #2", (1, 2))])
-)
-def test_add_shop_transaction_same_asset(gnucash_creator, book, from_account, to_account, to_account_two,
-                                         date, shop_name, transaction_list):
-    assert len(book.transactions) == 0
+    ((date(year=2019, month=1, day=1), "Grocery Test Shop #1", [("Transaction #1", (300,)), ["Transaction #2", (400,)]]),
+    (date(year=2019, month=2, day=1), "Grocery Test Shop #2", [("Transaction #1", (400, 500)), ["Transaction #2", (1, 2)]])
+))
+def test_add_shop_transaction_same_asset(gnucash_creator, book, from_account, to_account, to_account_two,date, shop_name, transaction_list):
 
+    assert len(book.transactions) == 0
     currency = book.default_currency
-    #split = (to_account, (description, from_account, price_range))
     list_of_splits = []
     list_of_transaction_names = []
     list_of_price_ranges = []
@@ -102,7 +103,95 @@ def test_add_shop_transaction_same_asset(gnucash_creator, book, from_account, to
         assert tr.description == shop_name
         assert tr.post_date == date
 
+        total_price = 0
         for split in tr.splits:
-            assert split.memo.strip() in list_of_transaction_names
+            if split.account.type == "EXPENSE":
+                assert split.memo.strip() in list_of_transaction_names
+                total_price += float(split.value)
+
+        price_zipped_list = [x[0] + x[1] for x in zip(*list_of_price_ranges)]
+        if len(price_zipped_list) > 1:
+            assert price_zipped_list[0] <= total_price <= price_zipped_list[1]
+        else:
+            assert total_price == price_zipped_list[0]
 
 
+@pytest.mark.parametrize(
+    ("date", "shop_name", "transaction_list"),
+    ((date(year=2019, month=1, day=1), "Grocery Test Shop #1", [("Transaction #1", (300,)), ["Transaction #2", (400,)]]),
+    (date(year=2019, month=2, day=1), "Grocery Test Shop #2", [("Transaction #1", (400, 500)), ["Transaction #2", (1, 2)]])
+))
+def test_add_shop_transaction_different_asset(gnucash_creator, book, from_account, from_account_two, to_account, to_account_two,
+                                              date, shop_name, transaction_list):
+
+    assert len(book.transactions) == 0
+    currency = book.default_currency
+    list_of_splits = []
+    list_of_transaction_names = []
+    list_of_price_ranges = []
+
+    for accounts, transaction in zip([(to_account, from_account), (to_account_two, from_account_two)], transaction_list):
+        desc = transaction[0]
+        single_price_range = transaction[1]
+        list_of_transaction_names.append(desc)
+        list_of_price_ranges.append(single_price_range)
+        list_of_splits.append((accounts[0], (desc, accounts[1], single_price_range)))
+
+    func = gnucash_creator._GnucashExampleCreator__add_shop_transaction
+    func(book, date, currency, list_of_splits, shop_name)
+
+    assert len(book.transactions) == 1
+
+    for tr in book.transactions:
+        assert tr.description == shop_name
+        assert tr.post_date == date
+
+        total_price = 0
+        total_asset = 0
+        for split in tr.splits:
+            if split.account.type == "EXPENSE":
+                assert split.memo.strip() in list_of_transaction_names
+                total_price += float(split.value)
+            if split.account.type == "ASSET":
+                total_asset += float(split.value)
+
+        assert total_price == -total_asset
+
+        price_zipped_list = [x[0] + x[1] for x in zip(*list_of_price_ranges)]
+        if len(price_zipped_list) > 1:
+            assert price_zipped_list[0] <= total_price <= price_zipped_list[1]
+        else:
+            assert total_price == price_zipped_list[0]
+
+
+def test_create_book(gnucash_creator):
+    gnucash_creator.create_example_book()
+
+    example_file_dir = os.path.split(os.path.dirname(os.path.realpath(__file__)))[0]
+    example_file_path = os.path.join(example_file_dir, "flask_app", "gnucash", "gnucash_examples", "example_gnucash.gnucash")
+
+    test_book = piecash.open_book(gnucash_creator.file_path)
+    compare_book = piecash.open_book(example_file_path)
+
+    assert len(test_book.transactions) == len(compare_book.transactions)
+
+    shop_names = ["Grocery Shop #1", "Grocery Shop #2"]
+    compare_list = []
+    shop_list = []
+    for book in (test_book, compare_book):
+        total_price = 0
+        shop_dict = Counter()
+        for tr in book.transactions:
+            for sp in tr.splits:
+                if sp.account.type == "EXPENSE":
+                    total_price += float(sp.value)
+            if tr.description in shop_names:
+                shop_dict[tr.description] += 1
+        compare_list.append(total_price)
+        shop_list.append(shop_dict)
+
+    #assert compare_list[0] == compare_list[1]
+
+    for key in shop_list[0]:
+        assert key in shop_list[1]
+        assert shop_list[0][key] == shop_list[1][key]
