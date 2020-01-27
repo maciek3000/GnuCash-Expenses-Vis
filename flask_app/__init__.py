@@ -25,7 +25,7 @@ def create_app(test_config=None):
     from .bkapp.bkapp import BokehApp
 
     # test file and names, later on it will be provided by the user
-    bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash')
+    bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_examples', 'example_gnucash.gnucash')
     bk_names = ['Maciek', 'Justyna']
 
     bk_port = 9090
