@@ -10,6 +10,11 @@ from datetime import date
         ("Second", ("Transaction #2", "From", (4000,))),
 ))
 def test_extract_data_single_transaction(gnucash_creator, key, output):
+    """Testing of Extracting data from Tuples in the d dictionary used in create_example_book.
+
+        Test for Single Transaction in the Tuple.
+    """
+
     test_dict = {
         "First": {("Transaction #1", "From"): (100, 200)},
         "Second": {("Transaction #2", "From"): (4000,)},
@@ -27,11 +32,16 @@ def test_extract_data_single_transaction(gnucash_creator, key, output):
                    ("Transaction #2", "From", (300,)))),
         ("Third", (("Transaction #3", "From", (200, 300)),
                    ("Transaction #4", "From", (500,)))
-),))
+         ),))
 def test_extract_data_multiple_transaction(gnucash_creator, key, outputs):
+    """Testing of Extracting data from Tuples in the d dictionary used in create_example_book.
+
+        Test for Multiple Transactions in the Tuple.
+    """
+
     test_dict = {
         "First": {("Transaction #1", "From"): (100, 200),
-                  ("Transaction #2", "From"): (300, )},
+                  ("Transaction #2", "From"): (300,)},
         "Third": {("Transaction #3", "From"): (200, 300),
                   ("Transaction #4", "From"): (500,)},
     }
@@ -47,16 +57,26 @@ def test_extract_data_multiple_transaction(gnucash_creator, key, outputs):
         (date(year=2019, month=1, day=2), "Second Transaction", (500, 600)),
 ))
 def test_add_transaction(gnucash_creator, book, from_account, to_account, date, description, price_range):
+    """Testing adding Transactions to the piecash book.
+
+        Only simple Transactions are tested here.
+    """
 
     assert len(book.transactions) == 0
+
     transaction = (description, from_account, price_range)
     func = gnucash_creator._GnucashExampleCreator__add_transaction
     func(book, date, book.default_currency, to_account, transaction)
+
     assert len(book.transactions) == 1
 
+    # loop to get the info on Transactions
     for tr in book.transactions:
         assert tr.description == description
         assert tr.post_date == date
+
+        from_value = None
+        to_value = None
 
         for split in tr.splits:
             if split.account.type == "ASSET":
@@ -66,7 +86,7 @@ def test_add_transaction(gnucash_creator, book, from_account, to_account, date, 
                 assert split.account.name == to_account.name
                 to_value = float(split.value)
 
-        assert from_value == -to_value
+        assert from_value is not None and to_value is not None and from_value == -to_value
 
         if len(price_range) > 1:
             assert (price_range[0] <= to_value) and (to_value <= price_range[1])
@@ -76,12 +96,21 @@ def test_add_transaction(gnucash_creator, book, from_account, to_account, date, 
 
 @pytest.mark.parametrize(
     ("date", "shop_name", "transaction_list"),
-    ((date(year=2019, month=1, day=1), "Grocery Test Shop #1", [("Transaction #1", (300,)), ["Transaction #2", (400,)]]),
-    (date(year=2019, month=2, day=1), "Grocery Test Shop #2", [("Transaction #1", (400, 500)), ["Transaction #2", (1, 2)]])
-))
-def test_add_shop_transaction_same_asset(gnucash_creator, book, from_account, to_account, to_account_two,date, shop_name, transaction_list):
+    (
+            (date(year=2019, month=1, day=1), "Grocery Test Shop #1",
+             [("Transaction #1", (300,)), ["Transaction #2", (400,)]]),
+            (date(year=2019, month=2, day=1), "Grocery Test Shop #2",
+             [("Transaction #1", (400, 500)), ["Transaction #2", (1, 2)]])
+    ))
+def test_add_shop_transaction_same_asset(gnucash_creator, book, from_account, to_account, to_account_two, date,
+                                         shop_name, transaction_list):
+    """Testing adding Split (Shop) Transactions to the piecash book.
+
+        All Transactions tested here have the same from_account (Asset Account).
+    """
 
     assert len(book.transactions) == 0
+
     currency = book.default_currency
     list_of_splits = []
     list_of_transaction_names = []
@@ -118,19 +147,27 @@ def test_add_shop_transaction_same_asset(gnucash_creator, book, from_account, to
 
 @pytest.mark.parametrize(
     ("date", "shop_name", "transaction_list"),
-    ((date(year=2019, month=1, day=1), "Grocery Test Shop #1", [("Transaction #1", (300,)), ["Transaction #2", (400,)]]),
-    (date(year=2019, month=2, day=1), "Grocery Test Shop #2", [("Transaction #1", (400, 500)), ["Transaction #2", (1, 2)]])
-))
-def test_add_shop_transaction_different_asset(gnucash_creator, book, from_account, from_account_two, to_account, to_account_two,
-                                              date, shop_name, transaction_list):
+    (
+            (date(year=2019, month=1, day=1), "Grocery Test Shop #1",
+             [("Transaction #1", (300,)), ["Transaction #2", (400,)]]),
+            (date(year=2019, month=2, day=1), "Grocery Test Shop #2",
+             [("Transaction #1", (400, 500)), ["Transaction #2", (1, 2)]])
+    ))
+def test_add_shop_transaction_different_asset(gnucash_creator, book, from_account, from_account_two, to_account,
+                                              to_account_two, date, shop_name, transaction_list):
+    """Testing adding Split (Shop) Transactions to the piecash book.
 
+        Every Transaction tested have a different from_account (Asset Account) from the other Transaction.
+    """
     assert len(book.transactions) == 0
+
     currency = book.default_currency
     list_of_splits = []
     list_of_transaction_names = []
     list_of_price_ranges = []
 
-    for accounts, transaction in zip([(to_account, from_account), (to_account_two, from_account_two)], transaction_list):
+    for accounts, transaction in zip([(to_account, from_account), (to_account_two, from_account_two)],
+                                     transaction_list):
         desc = transaction[0]
         single_price_range = transaction[1]
         list_of_transaction_names.append(desc)
@@ -165,18 +202,19 @@ def test_add_shop_transaction_different_asset(gnucash_creator, book, from_accoun
 
 
 def test_create_book(gnucash_creator):
+    """Testing reproducibility of the create_example_book function."""
 
     gnucash_creator.create_example_book()
 
     example_file_dir = os.path.split(os.path.dirname(os.path.realpath(__file__)))[0]
-    example_file_path = os.path.join(example_file_dir, "flask_app", "gnucash", "gnucash_examples", "example_gnucash.gnucash")
+    example_file_path = os.path.join(example_file_dir, "flask_app", "gnucash", "gnucash_examples",
+                                     "example_gnucash.gnucash")
 
     test_book = piecash.open_book(gnucash_creator.file_path)
     compare_book = piecash.open_book(example_file_path)
 
     assert len(test_book.transactions) == len(compare_book.transactions)
 
-    shop_names = ["Grocery Shop #1", "Grocery Shop #2"]
     compare_list = []
     tr_list = []
     for book in (test_book, compare_book):
