@@ -28,7 +28,7 @@ class GnuCashDBParser(object):
 
         self.file_path = file_path
         self.names = names
-        self.expenses_df = self.create_df(file_path, names)
+        self.expenses_df = None
 
     def create_df(self, file_path, names):
         # TODO: update desc of columns
@@ -126,4 +126,6 @@ class GnuCashDBParser(object):
         return return_string
 
     def get_df(self):
+        if self.expenses_df is None:
+            self.expenses_df = self.create_df(self.file_path, self.names)
         return self.expenses_df
