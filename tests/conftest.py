@@ -88,8 +88,8 @@ def create_simple_book(currency, file_path):
     acc2 = piecash.Account("Asset #2", "ASSET", curr, parent=assets)
 
     expenses = piecash.Account("Expenses", "EXPENSE", curr, parent=book.root_account, placeholder=True)
-    type1 = piecash.Account("Type #1", "EXPENSE", curr, parent=expenses, placeholder=True)
-    type2 = piecash.Account("Type #2", "EXPENSE", curr, parent=expenses, placeholder=True)
+    type1 = piecash.Account("Main Type #1", "EXPENSE", curr, parent=expenses, placeholder=True)
+    type2 = piecash.Account("Main Type #2", "EXPENSE", curr, parent=expenses, placeholder=True)
     fruits = piecash.Account("Fruits", "EXPENSE", curr, parent=type1, placeholder=True)
     dairy = piecash.Account("Dairy", "EXPENSE", curr, parent=type2, placeholder=True)
     apples = piecash.Account("Apples", "EXPENSE", curr, parent=fruits)

@@ -2,11 +2,15 @@ import pandas as pd
 
 
 def test_get_list_of_transactions_example_book(gnucash_db_parser_example_book):
+    """Testing returned list of transactions from Example Gnucash file"""
+
     returned_list = gnucash_db_parser_example_book._get_list_of_transactions(gnucash_db_parser_example_book.file_path)
     assert len(returned_list) == 2428
 
 
 def test_get_list_of_transactions_simple_book(gnucash_db_parser_simple_book):
+    """Testing returned list of transactions from simple piecash book (created manually)"""
+
     curr = "PLN"
     expected_transactions = [
         ("Apples #1", "2019-01-01", "nan", "Expenses:Type #1:Fruits:Apples", "5", curr),
@@ -27,8 +31,8 @@ def test_get_list_of_transactions_simple_book(gnucash_db_parser_simple_book):
 
 
 def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
-    # ['Date', 'Price', 'Currency', 'Product', 'Shop', 'ALL_CATEGORIES',
-    #        'Type', 'Category', 'SubCategory', 'SubType', 'MonthYear'
+    """Testing DataFrame returned by GnucashDBParser from simple piecash book (created manually)"""
+
     d = {
         "Date": ["01-Jan-2019", "02-Jan-2019", "03-Jan-2019", "10-Jan-2019", "11-Jan-2019"],
         "Price": 37.5,
@@ -36,7 +40,7 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
         "Product": ["Apples #1", "Eggs #1", "Other Apples"],
         "Shop": ["Shop #1", "Shop #2"],
         "ALL_CATEGORIES": ["Expenses:Type #1:Fruits:Apples", "Expenses:Type #2:Dairy:Eggs"],
-        "Type": ["Type #1", "Type #2"],
+        "Type": ["Main Type #1", "Main Type #2"],
         "Category": ["Apples", "Eggs"],
         "MonthYear": ["01-2019"]
     }
@@ -51,9 +55,7 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
     keys.remove("ALL_CATEGORIES")
 
     for col in keys:
-        print(col)
         unique = list(df[col].unique())
-        print(unique)
         for elem in unique:
             if not pd.isna(elem):
                 assert elem in d[col]
@@ -74,3 +76,94 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
     for elem in df['ALL_CATEGORIES']:
         s = ":".join(elem)
         assert s in d['ALL_CATEGORIES']
+
+
+def test_create_df_from_example_book(gnucash_db_parser_example_book):
+    """Testing DataFrame returned by GnucashDBParser from Example Gnucash file"""
+
+    all_categories = set(map(lambda x: "Expenses:Family:" + x, [
+        "Grocery:Bread",
+        "Grocery:Eggs",
+        "Grocery:Meat",
+        "Grocery:Chips",
+        "Grocery:Fruits and Vegetables",
+        "Car:Petrol",
+        "Flat:Rent",
+        "Flat:Water and Electricity",
+        "Bathroom:Toilet",
+        "Bathroom:Personal - John",
+        "Bathroom:Personal - Susan",
+        "Other"
+    ])).union(["Expenses:John's Expenses:Clothes",
+               "Expenses:Susan's Expenses:Clothes", ])
+
+    shops = ["Grocery Shop #1", "Grocery Shop #2"]
+
+    date_range = pd.date_range("01-Jan-2019", "31-Dec-2019")
+    types = ["Family", "John's Expenses", "Susan's Expenses"]
+    products = [
+        "Clothes",
+        "White Bread",
+        "Rye Bread",
+        "Butter",
+        "Chicken",
+        "Cow",
+        "Eggs",
+        "Chips",
+        "Lollipops",
+        "Apple",
+        "Banana",
+        "Tomato",
+        "Pear",
+        "Petrol",
+        "Rent",
+        "Water and Electricity",
+        "Toilet Paper",
+        "Facial Tissues",
+        "Beard Balm",
+        "Shampoo",
+        "Face Cleanser",
+        "Other"
+    ]
+    categories = [
+        "Clothes",
+        "Bread",
+        "Eggs",
+        "Fruits and Vegetables",
+        "Meat",
+        "Chips",
+        "Petrol",
+        "Rent",
+        "Water and Electricity",
+        "Toilet",
+        "Personal - John",
+        "Personal - Susan",
+        "Other"
+    ]
+
+    test_dict = {
+        "Shop": shops,
+        "Date": date_range,
+        "Type": types,
+        "Category": categories,
+        "Product": products
+    }
+
+    df = gnucash_db_parser_example_book.get_df()
+
+    assert len(df) == 2428
+
+    # cols from test_dict
+    for col in test_dict.keys():
+        unique = df[col].unique()
+        for elem in unique:
+            if not pd.isna(elem):
+                assert elem in test_dict[col]
+
+    # ALL_CATEGORIES
+    for elem in df["ALL_CATEGORIES"]:
+        s = ":".join(elem)
+        assert s in all_categories
+
+    # Price
+    assert round(df["Price"].sum(), 2) == 53374.87
