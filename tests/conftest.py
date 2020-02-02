@@ -75,7 +75,7 @@ def example_book_path():
 
 @pytest.fixture
 def gnucash_db_parser_example_book(example_book_path):
-    gdbp = GnuCashDBParser(file_path=example_book_path, names=["John", "Susan"])
+    gdbp = GnuCashDBParser(file_path=example_book_path)
     return gdbp
 
 
@@ -161,5 +161,5 @@ def simple_book_path():
 
 @pytest.fixture
 def gnucash_db_parser_simple_book(simple_book_path):
-    gdbp = GnuCashDBParser(simple_book_path, names=["John", "Susan"])
+    gdbp = GnuCashDBParser(simple_book_path)
     return gdbp

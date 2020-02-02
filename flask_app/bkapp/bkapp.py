@@ -10,8 +10,8 @@ import os
 
 class BokehApp(object):
 
-    def __init__(self, file_path, port, names):
-        self.datasource = GnuCashDBParser(file_path, names=names).get_df()
+    def __init__(self, file_path, port):
+        self.datasource = GnuCashDBParser(file_path).get_df()
         self.port = port
         self.views = {
             '/trends': self.trends,

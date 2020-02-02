@@ -46,7 +46,7 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
     }
 
     df = gnucash_db_parser_simple_book.get_df()
-    assert len(df.columns) == 11
+    assert len(df.columns) == 9
 
     keys = list(d.keys())
     keys.remove("Price")
