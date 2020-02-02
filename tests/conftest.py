@@ -15,7 +15,7 @@ def gnucash_creator():
     """Test gnucash_example_creator Object"""
     example_fd, example_path = tempfile.mkstemp()
     currency = "PLN"
-    seed = 42
+    seed = 1010
 
     yield GnucashExampleCreator(example_path, currency, seed=seed)
 

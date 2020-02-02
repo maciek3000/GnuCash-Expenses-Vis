@@ -5,7 +5,7 @@ def test_get_list_of_transactions_example_book(gnucash_db_parser_example_book):
     """Testing returned list of transactions from Example Gnucash file"""
 
     returned_list = gnucash_db_parser_example_book._get_list_of_transactions(gnucash_db_parser_example_book.file_path)
-    assert len(returned_list) == 2428
+    assert len(returned_list) == 2480
 
 
 def test_get_list_of_transactions_simple_book(gnucash_db_parser_simple_book):
@@ -13,13 +13,13 @@ def test_get_list_of_transactions_simple_book(gnucash_db_parser_simple_book):
 
     curr = "PLN"
     expected_transactions = [
-        ("Apples #1", "2019-01-01", "nan", "Expenses:Type #1:Fruits:Apples", "5", curr),
-        ("Eggs #1", "2019-01-02", "nan", "Expenses:Type #2:Dairy:Eggs", "10", curr),
-        ("Other Apples", "2019-01-03", "nan", "Expenses:Type #1:Fruits:Apples", "4.5", curr),
-        ("Shop #1", "2019-01-10", "Apples #1", "Expenses:Type #1:Fruits:Apples", "3", curr),
-        ("Shop #1", "2019-01-10", "Eggs #1", "Expenses:Type #2:Dairy:Eggs", "7", curr),
-        ("Shop #2", "2019-01-11", "Other Apples", "Expenses:Type #1:Fruits:Apples", "3", curr),
-        ("Shop #2", "2019-01-11", "Apples #1", "Expenses:Type #1:Fruits:Apples", "5", curr)
+        ("Apples #1", "2019-01-01", "nan", "Expenses:Main Type #1:Fruits:Apples", "5", curr),
+        ("Eggs #1", "2019-01-02", "nan", "Expenses:Main Type #2:Dairy:Eggs", "10", curr),
+        ("Other Apples", "2019-01-03", "nan", "Expenses:Main Type #1:Fruits:Apples", "4.5", curr),
+        ("Shop #1", "2019-01-10", "Apples #1", "Expenses:Main Type #1:Fruits:Apples", "3", curr),
+        ("Shop #1", "2019-01-10", "Eggs #1", "Expenses:Main Type #2:Dairy:Eggs", "7", curr),
+        ("Shop #2", "2019-01-11", "Other Apples", "Expenses:Main Type #1:Fruits:Apples", "3", curr),
+        ("Shop #2", "2019-01-11", "Apples #1", "Expenses:Main Type #1:Fruits:Apples", "5", curr)
     ]
 
     returned_list = gnucash_db_parser_simple_book._get_list_of_transactions(gnucash_db_parser_simple_book.file_path)
@@ -39,7 +39,7 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
         "Currency": "PLN",
         "Product": ["Apples #1", "Eggs #1", "Other Apples"],
         "Shop": ["Shop #1", "Shop #2"],
-        "ALL_CATEGORIES": ["Expenses:Type #1:Fruits:Apples", "Expenses:Type #2:Dairy:Eggs"],
+        "ALL_CATEGORIES": ["Expenses:Main Type #1:Fruits:Apples", "Expenses:Main Type #2:Dairy:Eggs"],
         "Type": ["Main Type #1", "Main Type #2"],
         "Category": ["Apples", "Eggs"],
         "MonthYear": ["01-2019"]
@@ -151,7 +151,7 @@ def test_create_df_from_example_book(gnucash_db_parser_example_book):
 
     df = gnucash_db_parser_example_book.get_df()
 
-    assert len(df) == 2428
+    assert len(df) == 2480
 
     # cols from test_dict
     for col in test_dict.keys():
@@ -166,4 +166,4 @@ def test_create_df_from_example_book(gnucash_db_parser_example_book):
         assert s in all_categories
 
     # Price
-    assert round(df["Price"].sum(), 2) == 53374.87
+    assert round(df["Price"].sum(), 2) == 55653.90

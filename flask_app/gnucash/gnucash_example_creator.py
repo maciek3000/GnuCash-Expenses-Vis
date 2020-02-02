@@ -10,7 +10,7 @@ class GnucashExampleCreator(object):
     """Creator of example Gnucash File for the app."""
 
     def __init__(self, file_path, currency, low_proba_value=0.05, medium_proba_value=0.3, high_proba_value=0.6,
-                 shop_proba_value=0.4, date_range=pd.date_range("01-Jan-2019", "31-Dec-2019"), seed=42):
+                 shop_proba_value=0.4, date_range=pd.date_range("01-Jan-2019", "31-Dec-2019"), seed=1010):
 
         # book settings
         self.file_path = file_path
@@ -110,9 +110,9 @@ class GnucashExampleCreator(object):
             ((("Rent", family_acc), (2000,)),),
             ((("Water and Electricity", family_acc), (20, 150)),),
             ((("Toilet Paper", family_acc), (5, 15)),
-             (("Facial Tissues", family_acc),  (2, 8))),
+             (("Facial Tissues", family_acc), (2, 8))),
             ((("Beard Balm", john_acc), (15, 50)),),
-            ((("Shampoo", susan_acc),  (10, 15)),
+            ((("Shampoo", susan_acc), (10, 15)),
              (("Face Cleanser", susan_acc), (10, 13))),
             ((("Other", family_acc), (1, 100)),)
         ]
@@ -295,6 +295,7 @@ class GnucashExampleCreator(object):
                          )
 
         book.flush()
+
 
 # Script for creating the example Gnucash file.
 # File will be created in the same directory where this .py file is located.
