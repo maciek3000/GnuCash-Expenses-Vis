@@ -99,7 +99,7 @@ class GnuCashDBParser(object):
         df[self.shop] = np.where(cond, np.nan, df[self.name])
 
         # ALL_CATEGORIES as it might be helpful later on
-        df[self.all] = df[self.account]
+        df[self.all] = df[self.account].apply(lambda x: x.split(":"))
 
         df[self.type] = df[self.all].apply(lambda x: x[1])
         df[self.category] = df[self.all].apply(lambda x: x[-1])
@@ -113,6 +113,8 @@ class GnuCashDBParser(object):
 
         # dropping columns that are no longer needed
         df = df.drop([self.name, self.split, self.account], axis=1)
+
+        df[self.all] = df[self.all].apply(lambda x: ":".join(x))
 
         return df
 

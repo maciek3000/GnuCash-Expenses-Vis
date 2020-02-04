@@ -74,8 +74,7 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
 
     # ALL_CATEGORIES
     for elem in df['ALL_CATEGORIES']:
-        s = ":".join(elem)
-        assert s in d['ALL_CATEGORIES']
+        assert elem in d['ALL_CATEGORIES']
 
 
 def test_create_df_from_example_book(gnucash_db_parser_example_book):
@@ -162,8 +161,7 @@ def test_create_df_from_example_book(gnucash_db_parser_example_book):
 
     # ALL_CATEGORIES
     for elem in df["ALL_CATEGORIES"]:
-        s = ":".join(elem)
-        assert s in all_categories
+        assert elem in all_categories
 
     # Price
     assert round(df["Price"].sum(), 2) == 55653.90
