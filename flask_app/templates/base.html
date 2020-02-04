@@ -5,7 +5,7 @@
 <body>
 <div class="main">
     <div class="menu">
-        <div id="settings">&#9776;</div>
+        <div id="settings"><a href="{{ url_for('settings.settings') }}">&#9776;</a></div>
         <div><a href="{{ url_for('overview') }}">Overview</a></div>
         <div><a href="{{ url_for('trends.trends') }}">Trends</a></div>
         <div><a href="{{ url_for('category.category') }}">Categories</a></div>

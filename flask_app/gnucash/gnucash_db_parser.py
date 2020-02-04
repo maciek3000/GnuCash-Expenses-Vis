@@ -99,7 +99,7 @@ class GnuCashDBParser(object):
         df[self.shop] = np.where(cond, np.nan, df[self.name])
 
         # ALL_CATEGORIES as it might be helpful later on
-        df[self.all] = df[self.account].apply(lambda x: x.split(':'))
+        df[self.all] = df[self.account]
 
         df[self.type] = df[self.all].apply(lambda x: x[1])
         df[self.category] = df[self.all].apply(lambda x: x[-1])

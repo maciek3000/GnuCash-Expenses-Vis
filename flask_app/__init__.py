@@ -36,15 +36,17 @@ def create_app(test_config=None):
 
     # Blueprints section
 
-    from . import trends, overview, category
+    from . import trends, overview, category, settings
 
     bp_trends = trends.create_bp(bkapp_server_address)
     bp_overview = overview.create_bp(bkapp_server_address)
     bp_category = category.create_bp(bkapp_server_address)
+    bp_settings = settings.create_bp(bkapp_server_address)
 
     app.register_blueprint(bp_trends)
     app.register_blueprint(bp_overview)
     app.register_blueprint(bp_category)
+    app.register_blueprint(bp_settings)
 
     app.add_url_rule('/', endpoint='overview')
 

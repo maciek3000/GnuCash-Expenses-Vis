@@ -1,5 +1,5 @@
 from bokeh.models import ColumnDataSource, NumeralTickFormatter
-from bokeh.models.widgets import Dropdown, Select, Div
+from bokeh.models.widgets import Dropdown, Select, Div, CheckboxGroup
 from bokeh.plotting import figure, curdoc
 from bokeh.server.server import Server
 from bokeh.themes import Theme
@@ -11,18 +11,31 @@ import os
 class BokehApp(object):
 
     def __init__(self, file_path, port):
-        self.datasource = GnuCashDBParser(file_path).get_df()
+        self.datasource = ColumnDataSource(GnuCashDBParser(file_path).get_df())
         self.port = port
         self.views = {
             '/trends': self.trends,
             '/category': self.category,
             '/some_data': self.some_data,
+            '/settings': self.settings,
         }
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
+    def settings(self, doc):
+        df = self.datasource.to_df()
+        cats = df['ALL_CATEGORIES'].unique()
+
+        checkbox_group = CheckboxGroup(
+            labels=cats.tolist(),
+            active=list(range(len(cats)))
+        )
+
+        doc.add_root(checkbox_group)
+        doc.theme = self.theme
+
     def trends(self, doc):
 
-        agg = self.datasource.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
+        agg = self.datasource.to_df().groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
         source = ColumnDataSource(agg)
 
         p = figure(width=480, height=480, x_range=agg['MonthYear'])
@@ -46,13 +59,13 @@ class BokehApp(object):
 
     def category(self, doc):
 
-        unique_categories = self.datasource['Category'].unique().tolist()
+        unique_categories = self.datasource.to_df()['Category'].unique().tolist()
         unique_categories.sort()
 
-        months = self.datasource['MonthYear'].unique().tolist()
+        months = self.datasource.to_df()['MonthYear'].unique().tolist()
         months.sort()
 
-        df = self.datasource[self.datasource['Category'] == unique_categories[0]]
+        df = self.datasource.to_df()[self.datasource.to_df()['Category'] == unique_categories[0]]
         agg = df.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
         source = ColumnDataSource(data=agg)
 
@@ -74,7 +87,7 @@ class BokehApp(object):
 
         def callback(attr, old, new):
             if new != old:
-                df = self.datasource[self.datasource['Category'] == new]
+                df = self.datasource.to_df()[self.datasource.to_df()['Category'] == new]
                 agg = df.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
                 source.data = ColumnDataSource(agg).data
 
@@ -86,7 +99,7 @@ class BokehApp(object):
         doc.theme = self.theme
 
     def some_data(self, doc):
-        agg = self.datasource.groupby(['MonthYear']).sum().reset_index()
+        agg = self.datasource.to_df().groupby(['MonthYear']).sum().reset_index()
 
         val = agg['Price'].mean()
         text = 'Average expenses are: <p style="color:#9c2b19"> {} </p>'.format(val)
