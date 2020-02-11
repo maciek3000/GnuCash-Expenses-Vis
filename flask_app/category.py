@@ -8,6 +8,7 @@ def create_bp(bkapp_server_address):
     @bp.route('/category')
     def category():
         script = server_document(bkapp_server_address + 'category')
-        return render_template('category.html', script=script)
+        table = server_document(bkapp_server_address + 'describing_table')
+        return render_template('category.html', script=script, table=table)
 
     return bp
