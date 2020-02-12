@@ -28,7 +28,6 @@ class BokehServer(object):
             '/some_data': self.some_data,
             '/settings': self.settings,
             '/test_table': self.test_table,
-            '/describing_table': self.describing_table,
         }
 
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
@@ -55,12 +54,6 @@ class BokehServer(object):
     def category(self, doc):
 
         fig = self.bkapp.category("Category", "MonthYear", "Price")
-        doc.add_root(fig)
-        doc.theme = self.theme
-
-    def describing_table(self, doc):
-
-        fig = self.bkapp.describing_table()
         doc.add_root(fig)
         doc.theme = self.theme
 

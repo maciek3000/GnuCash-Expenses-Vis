@@ -39,26 +39,6 @@ class BokehApp(object):
 
         return self.category_creator.get_gridplot(self.current_datasource, category_name, month_name, price_name)
 
-    def describing_table(self):
-
-        avg_all = str(round(self.current_datasource['Price'].mean(), 2))
-
-        text = """<table>
-                    <tr>
-                        <th></th>
-                        <th>All</th>
-                        <th>{category}</th>
-                    </tr>
-                    <tr>
-                        <td>Average</td>
-                        <td>{avg_all}</td>
-                        <td>{avg_category}</td>
-                    </tr>
-                </table>                    
-               """.format(category="Bread", avg_all=avg_all, avg_category="250")
-        div = Div(text=text, id="describing_table")
-        return div
-
     ########## old functions ##########
 
     def trends(self, month_name):
