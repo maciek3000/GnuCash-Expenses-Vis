@@ -33,6 +33,7 @@ class BokehServer(object):
 
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
+
     def settings(self, doc):
 
         fig = self.bkapp.settings("ALL_CATEGORIES")

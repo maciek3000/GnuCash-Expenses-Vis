@@ -5,6 +5,7 @@ from bokeh.models.widgets import CheckboxGroup, Div, Select
 from bokeh.models import ColumnDataSource, CDSView, NumeralTickFormatter, GroupFilter, DataTable, TableColumn, CustomJS
 from bokeh.plotting import figure
 from bokeh.layouts import column, layout, row
+from .bk_category import Category
 
 
 class BokehApp(object):
@@ -12,8 +13,8 @@ class BokehApp(object):
     def __init__(self, dataframe):
         self.org_datasource = dataframe
         self.current_datasource = dataframe
-        self.current_source = ColumnDataSource(self.current_datasource)
-        self.overview_single_cat = None
+
+        self.category_creator = Category()
 
     def settings(self, cat_name):
         all_cats = sorted(self.org_datasource[cat_name].unique().tolist())
@@ -33,6 +34,32 @@ class BokehApp(object):
         checkbox_group.on_click(callback)
 
         return checkbox_group
+
+    def category(self, category_name, month_name, price_name):
+
+        return self.category_creator.get_gridplot(self.current_datasource, category_name, month_name, price_name)
+
+    def describing_table(self):
+
+        avg_all = str(round(self.current_datasource['Price'].mean(), 2))
+
+        text = """<table>
+                    <tr>
+                        <th></th>
+                        <th>All</th>
+                        <th>{category}</th>
+                    </tr>
+                    <tr>
+                        <td>Average</td>
+                        <td>{avg_all}</td>
+                        <td>{avg_category}</td>
+                    </tr>
+                </table>                    
+               """.format(category="Bread", avg_all=avg_all, avg_category="250")
+        div = Div(text=text, id="describing_table")
+        return div
+
+    ########## old functions ##########
 
     def trends(self, month_name):
 
@@ -56,62 +83,6 @@ class BokehApp(object):
         p.yaxis.major_label_text_color = "#8C8C8C"
 
         return p
-
-    def category(self, category_name, month_name, price_name):
-        cats = self.current_datasource[category_name].unique().tolist()
-        cats.sort()
-
-        months = self.current_datasource[month_name].unique().tolist()
-        months.sort()
-
-        # getting values for the ColumnDataSource
-        aggregated_df = self.current_datasource.groupby([month_name, category_name]).sum().reset_index().sort_values(by=[month_name, category_name])
-        total_values = aggregated_df.groupby([month_name]).sum()[price_name].unique().tolist()
-        cat_dict = aggregated_df[aggregated_df[category_name] == cats[0]].set_index(month_name)[price_name].to_dict()
-        cat_values = [cat_dict[month] if month in cat_dict else np.nan for month in months]
-
-        source = ColumnDataSource({
-            "xs": [months, months],
-            "ys": [total_values, cat_values],
-            "width": [3, 2],
-            "color": ["blue", "red"]
-        })
-
-        # creating the figure
-        p = figure(width=360, height=360, x_range=months, y_range=[0, max(total_values)])
-        p.multi_line("xs", "ys", source=source, line_width="width", color="color")
-
-        def callback(attr, old, new):
-            if new != old:
-                new_dict = aggregated_df[aggregated_df[category_name] == new].set_index(month_name)[price_name].to_dict()
-                new_values = [new_dict[month] if month in new_dict else np.nan for month in months]
-                source.data["ys"] = [total_values, new_values]
-
-
-        dropdown = Select(title='Category:', value=cats[0], options=cats)
-        dropdown.on_change('value', callback)
-
-        return column(dropdown, p)
-
-    def describing_table(self):
-
-        avg_all = str(round(self.current_datasource['Price'].mean(), 2))
-
-        text = """<table>
-                    <tr>
-                        <th></th>
-                        <th>All</th>
-                        <th>{category}</th>
-                    </tr>
-                    <tr>
-                        <td>Average</td>
-                        <td>{avg_all}</td>
-                        <td>{avg_category}</td>
-                    </tr>
-                </table>                    
-               """.format(category="Bread", avg_all=avg_all, avg_category="250")
-        div = Div(text=text, id="describing_table")
-        return div
 
     def old_category(self):
         unique_categories = self.current_datasource['Category'].unique().tolist()
