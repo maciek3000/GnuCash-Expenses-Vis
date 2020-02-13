@@ -19,8 +19,8 @@ class BokehServer(object):
     To add a visualization (view), the function has to defined and then added into self.views dictionary.
     """
 
-    def __init__(self, file_path, port):
-        self.bkapp = BokehApp(GnuCashDBParser(file_path).get_df())
+    def __init__(self, file_path, port, col_mapping):
+        self.bkapp = BokehApp(GnuCashDBParser(file_path).get_df(), col_mapping)
         self.port = port
         self.views = {
             '/trends': self.trends,
@@ -53,7 +53,7 @@ class BokehServer(object):
 
     def category(self, doc):
 
-        fig = self.bkapp.category("Category", "MonthYear", "Price")
+        fig = self.bkapp.category_gridplot()
         doc.add_root(fig)
         doc.theme = self.theme
 

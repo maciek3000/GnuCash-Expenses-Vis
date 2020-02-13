@@ -1,91 +1,105 @@
 import numpy as np
-import statistics
+import pandas as pd
 
-from bokeh.models import ColumnDataSource, CustomJS
+from bokeh.models import ColumnDataSource
 from bokeh.layouts import column, row
 from bokeh.models import Select
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
 
 
+def get_unique_values_from_column(df, col_name):
+    return sorted(df[col_name].unique().tolist())
+
+
+def get_aggregated_dataframe_sum(df, list_of_cols):
+    agg = df.groupby(list_of_cols).sum().reset_index().sort_values(by=list_of_cols)
+    return agg
+
+
 class Category(object):
 
-    table_text = """<table>
+    table_html = """<table>
                     <tr>
-                        <th></th>
+                        <th>Monthly</th>
                         <th>All</th>
                         <th>{category}</th>
                     </tr>
                     <tr>
                         <td>Average</td>
-                        <td>{avg_all}</td>
-                        <td>{avg_category}</td>
+                        <td>{avg_all:.2f}</td>
+                        <td>{avg_category:.2f}</td>
                     </tr>
                 </table>"""
 
-    def __init__(self):
-        pass
+    def __init__(self, category_colname, monthyear_colname, price_colname):
+        self.category = category_colname
+        self.monthyear = monthyear_colname
+        self.price = price_colname
 
-    def get_gridplot(self, dataframe, category_name, month_name, price_name):
-        line_plot = self.get_category_line_plot(dataframe, category_name, month_name, price_name)
-        # info_table = self.get_info_table(dataframe)
-        return line_plot
+    def get_gridplot(self, dataframe):
+        unique_categories = get_unique_values_from_column(dataframe, self.category)
+        unique_months = get_unique_values_from_column(dataframe, self.monthyear)
 
-    def get_category_line_plot(self, dataframe, category_name, month_name, price_name):
-        cats = dataframe[category_name].unique().tolist()
-        cats.sort()
+        first_chosen_category = unique_categories[0]
+        aggregated = get_aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
 
-        months = dataframe[month_name].unique().tolist()
-        months.sort()
-
-        # getting values for the ColumnDataSource
-        aggregated_df = dataframe.groupby([month_name, category_name]).sum().reset_index().sort_values(
-            by=[month_name, category_name])
-        total_values = aggregated_df.groupby([month_name]).sum()[price_name].unique().tolist()
-        cat_dict = aggregated_df[aggregated_df[category_name] == cats[0]].set_index(month_name)[price_name].to_dict()
-        cat_values = [cat_dict[month] if month in cat_dict else np.nan for month in months]
-
-        avg_all = str(round(aggregated_df[price_name].mean(), 2))
-        avg_category = str(round(aggregated_df[aggregated_df[category_name] == cats[0]][price_name].mean(), 2))
-
-        source = ColumnDataSource({
-            "xs": [months, months],
-            "ys": [total_values, cat_values],
-            "width": [3, 2],
-            "color": ["blue", "red"]
-        })
-
-        # creating the figure
-        p = figure(width=360, height=360, x_range=months, y_range=[0, max(total_values)])
-        p.multi_line("xs", "ys", source=source, line_width="width", color="color")
-
-        div = self.get_div(category=cats[0], avg_all=avg_all, avg_category=avg_category)
+        line_plot, line_plot_source = self.create_line_plot(aggregated, unique_months, first_chosen_category)
+        line_values = line_plot_source.data["ys"]
+        table_div = Div(text=self.__get_table_div_text(line_values, first_chosen_category))
+        dropdown = Select(title='Category:', value=first_chosen_category, options=unique_categories)
 
         def callback(attr, old, new):
             if new != old:
-                new_dict = aggregated_df[aggregated_df[category_name] == new].set_index(month_name)[
-                    price_name].to_dict()
-                new_values = [new_dict[month] if month in new_dict else np.nan for month in months]
-                source.data["ys"] = [total_values, new_values]
+                new_ys = self.__get_source_data_for_multi_line_plot(aggregated, unique_months, new)["ys"]
+                line_plot_source.data["ys"] = new_ys
+                table_div.text = self.__get_table_div_text(new_ys, new)
 
-                div.text = self.table_text.format(avg_all=avg_all, category=new,
-                                                  avg_category=np.nanmean(new_values))
+        dropdown.on_change("value", callback)
 
+        return row(table_div, column(dropdown, line_plot))
 
-        dropdown = Select(title='Category:', value=cats[0], options=cats)
-        dropdown.on_change('value', callback)
+    def create_line_plot(self, agg, months, chosen_cat, **kwargs):
 
-        return row(div, column(dropdown, p))
+        plot_feat_dict = {
+            "width": [4, 4],
+            "color": ["blue", "red"]
+        }
 
-    def get_info_table(self, dataframe, category_name, avg_all, avg_category):
+        source_data = self.__get_source_data_for_multi_line_plot(agg, months, chosen_cat)
+        source = ColumnDataSource({
+            **source_data,
+            **plot_feat_dict
+        })
 
-        avg_all = str(round(dataframe['Price'].mean(), 2))
+        p = figure(width=360, height=360, x_range=months, y_range=[0, max(source.data["ys"][0])])
+        p.multi_line("xs", "ys", source=source, color="color", line_width="width")
 
-        div = self.get_div(category="Bread", avg_all=avg_all, avg_category="250")
-        return div
+        return p, source
 
-    def get_div(self, **kwargs):
-        text = self.table_text.format(**kwargs)
+    def __get_source_data_for_multi_line_plot(self, agg, months, cat):
+        total_values = agg.groupby([self.monthyear]).sum()[self.price].tolist()
 
-        div = Div(text=text)
-        return div
+        category_dict = agg[agg[self.category] == cat].set_index(self.monthyear)[self.price].to_dict()
+        category_values = [category_dict[month] if month in category_dict else np.nan for month in months]
+        data = {
+            "xs": [months, months],
+            "ys": [total_values, category_values]
+        }
+        return data
+
+    def __get_table_div_text(self, lines, cat_name):
+        values = pd.DataFrame({
+            "All":  lines[0],
+            "Cat": lines[1]
+        }).describe()
+        avg = values.loc["mean"]
+        median = values.loc["50%"]
+
+        kwargs = {
+            "category": cat_name,
+            "avg_all": avg["All"],
+            "avg_category": avg["Cat"]
+        }
+        text = self.table_html.format(**kwargs)
+        return text

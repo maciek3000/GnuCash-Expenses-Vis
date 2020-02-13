@@ -26,10 +26,23 @@ def create_app(test_config=None):
 
     # test file and names, later on it will be provided by the user
     bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_examples', 'example_gnucash.gnucash')
-
     bk_port = 9090
     bkapp_server_address = 'http://127.0.0.1:9090/'
-    bkapp_server = BokehServer(bk_file_path_db, bk_port)
+
+    # col_mapping can be later provided from the file
+    col_mapping = {
+        "date": "Date",
+        "price": "Price",
+        "currency": "Currency",
+        "product": "Product",
+        "shop": "Shop",
+        "all": "ALL_CATEGORIES",
+        "type": "Type",
+        "category": "Category",
+        "monthyear": "MonthYear"
+    }
+
+    bkapp_server = BokehServer(bk_file_path_db, bk_port, col_mapping)
 
     from threading import Thread
     Thread(target=bkapp_server.bkworker).start()

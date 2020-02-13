@@ -10,11 +10,21 @@ from .bk_category import Category
 
 class BokehApp(object):
 
-    def __init__(self, dataframe):
+    def __init__(self, dataframe, col_mapping):
         self.org_datasource = dataframe
         self.current_datasource = dataframe
 
-        self.category_creator = Category()
+        self.date = col_mapping["date"]
+        self.price = col_mapping["price"]
+        self.currency = col_mapping["currency"]
+        self.product = col_mapping["product"]
+        self.shop = col_mapping["shop"]
+        self.all = col_mapping["all"]
+        self.type = col_mapping["type"]
+        self.category = col_mapping["category"]
+        self.monthyear = col_mapping["monthyear"]
+
+        self.category_creator = Category(self.category, self.monthyear, self.price)
 
     def settings(self, cat_name):
         all_cats = sorted(self.org_datasource[cat_name].unique().tolist())
@@ -35,9 +45,9 @@ class BokehApp(object):
 
         return checkbox_group
 
-    def category(self, category_name, month_name, price_name):
+    def category_gridplot(self):
 
-        return self.category_creator.get_gridplot(self.current_datasource, category_name, month_name, price_name)
+        return self.category_creator.get_gridplot(self.current_datasource)
 
     ########## old functions ##########
 
