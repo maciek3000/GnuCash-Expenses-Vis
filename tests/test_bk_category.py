@@ -34,3 +34,35 @@ def test_get_unique_values_from_column(df, col_name, expected_result):
 def test_get_aggregated_dataframe_sum(df, list_of_cols, output):
     result = get_aggregated_dataframe_sum(df, list_of_cols)
     assert result.equals(output)
+
+
+@pytest.mark.parametrize(("category", "output"),
+                         (("Cat1", [6, 6, 13]),
+                          ("Cat2", [9, 17, 52]),
+                          ("Cat3", [np.nan, 17, np.nan])))
+def test_get_source_data_for_multi_line_plot(bk_category, aggregated_category_df, category, output):
+    source_data = bk_category._Category__get_source_data_for_multi_line_plot(aggregated_category_df, category)
+    xs = source_data["xs"]
+    ys = source_data["ys"]
+
+    for x in xs:
+        assert x == ["01-2019", "02-2019", "03-2019"]
+
+    assert ys[0] == [15, 40, 65]
+    assert ys[1] == output
+
+
+@pytest.mark.parametrize(("category", "list_of_values", "output"),
+                         (("Cat1", [[10, 15, 20, 25, 30], [1, 2, 3, 4, 5]],
+                           {"category": "Cat1", "avg_all": 20, "avg_category": 3, "median_all": 20,
+                            "median_category": 3}),
+                          ("Cat2", [[12.698, 14.456, 90.378, 67.345, 90.9145], [2.498, 3.087, np.nan, 3.978, 5.6134]],
+                           {"category": "Cat2", "avg_all": 55.1583, "avg_category": 3.7941,
+                            "median_all": 67.345, "median_category": 3.5325}),))
+def test_get_table_div_text(bk_category, category, list_of_values, output):
+    text = """Category: {category}, Avg_all: {avg_all:.2f}, Avg_category: {avg_category:.2f},
+              Median_all: {median_all:.2f}, Median_category: {median_category:.2f}"""
+
+    bk_category.table_html = text
+    result = bk_category._Category__get_table_div_text(list_of_values, category)
+    assert result == text.format(**output)

@@ -2,10 +2,13 @@ import pytest
 import piecash
 import tempfile
 import os
-from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
-from flask_app.gnucash.gnucash_db_parser import GnuCashDBParser
 from datetime import date
 from decimal import Decimal
+import pandas as pd
+
+from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
+from flask_app.gnucash.gnucash_db_parser import GnuCashDBParser
+from flask_app.bkapp.bk_category import Category
 
 # ========== gnucash_example_creator ========== #
 
@@ -163,3 +166,28 @@ def simple_book_path():
 def gnucash_db_parser_simple_book(simple_book_path):
     gdbp = GnuCashDBParser(simple_book_path)
     return gdbp
+
+# ========== bk_category ========== #
+
+
+@pytest.fixture
+def bk_category():
+    category = Category("Category", "MonthYear", "Price")
+    return category
+
+
+@pytest.fixture
+def aggregated_category_df():
+    _ = {
+        "MonthYear": ["01-2019", "01-2019",
+                      "02-2019", "02-2019", "02-2019",
+                      "03-2019", "03-2019"],
+        "Category": ["Cat1", "Cat2",
+                     "Cat1", "Cat2", "Cat3",
+                     "Cat2", "Cat1"],
+        "Price": [6, 9,
+                  6, 17, 17,
+                  52, 13]
+    }
+    df = pd.DataFrame(_)
+    return df
