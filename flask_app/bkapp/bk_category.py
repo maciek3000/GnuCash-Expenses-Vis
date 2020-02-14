@@ -9,7 +9,7 @@ from bokeh.models.widgets import Div
 
 
 def get_unique_values_from_column(df, col_name):
-    return sorted(df[col_name].unique().tolist())
+    return sorted(df[col_name].replace({np.nan: "nan"}).unique().tolist())
 
 
 def get_aggregated_dataframe_sum(df, list_of_cols):
