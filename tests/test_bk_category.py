@@ -2,6 +2,7 @@ from flask_app.bkapp.bk_category import get_aggregated_dataframe_sum, get_unique
 import pytest
 import pandas as pd
 import numpy as np
+from math import isclose
 
 
 @pytest.mark.parametrize(("df", "col_name", "expected_result"), (
@@ -58,11 +59,14 @@ def test_get_source_data_for_multi_line_plot(bk_category, aggregated_category_df
                             "median_category": 3}),
                           ("Cat2", [[12.698, 14.456, 90.378, 67.345, 90.9145], [2.498, 3.087, np.nan, 3.978, 5.6134]],
                            {"category": "Cat2", "avg_all": 55.1583, "avg_category": 3.7941,
-                            "median_all": 67.345, "median_category": 3.5325}),))
-def test_get_table_div_text(bk_category, category, list_of_values, output):
-    text = """Category: {category}, Avg_all: {avg_all:.2f}, Avg_category: {avg_category:.2f},
-              Median_all: {median_all:.2f}, Median_category: {median_category:.2f}"""
+                            "median_all": 67.3450, "median_category": 3.5325}),))
+def test_get_statistics_data(bk_category, category, list_of_values, output):
+    result = bk_category._Category__get_statistics_data(list_of_values, category)
 
-    bk_category.table_html = text
-    result = bk_category._Category__get_table_div_text(list_of_values, category)
-    assert result == text.format(**output)
+    for key in output:
+        assert key in result
+        val = result[key]
+        if type(val) == str:
+            assert val == output[key]
+        else:
+            assert isclose(val, output[key])
