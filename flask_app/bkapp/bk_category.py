@@ -1,9 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, Select, RadioGroup
 from bokeh.layouts import column, row
-from bokeh.models import Select
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
 
@@ -39,18 +38,45 @@ class Category(object):
                         <th>{category}</th>
                     </tr>
                     <tr>
+                        <td>Last Month:</td>
+                        <td>{last_all:.2f}</td>
+                        <td>{last_category:.2f}</td>
+                    </tr>
+                    <tr>
                         <td>Average</td>
                         <td>{avg_all:.2f}</td>
                         <td>{avg_category:.2f}</td>
                     </tr>
+                    <tr>
+                        <td>Median</td>
+                        <td>{median_all:.2f}</td>
+                        <td>{median_category:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td>Min</td>
+                        <td>{min_all:.2f}</td>
+                        <td>{min_category:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td>Max</td>
+                        <td>{max_all:.2f}</td>
+                        <td>{max_category:.2f}</td>
+                    </tr>
+                    <tr>
+                        <td>Standard Deviation</td>
+                        <td>{std_all:.2f}</td>
+                        <td>{std_category:.2f}</td>
+                    </tr>
                 </table>"""
+
+    category_types = ["Simple", "Extended"]
 
     def __init__(self, category_colname, monthyear_colname, price_colname):
         self.category = category_colname
         self.monthyear = monthyear_colname
         self.price = price_colname
 
-    def get_gridplot(self, dataframe):
+    def gridplot(self, dataframe):
         """Main function of the Category Object, that returns created gridplot for all Visualizations and Divs.
 
             Function creates a list of unique categories from provided dataframe and generates:
@@ -71,7 +97,7 @@ class Category(object):
         # multi line plot
         aggregated = get_aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
         source_data = self.__get_source_data_for_multi_line_plot(aggregated, first_chosen_category)
-        line_plot, line_plot_source = self.create_line_plot(source_data)
+        line_plot, line_plot_source = self.__create_line_plot(source_data)
 
         # statistics table Div
         line_values = source_data["ys"]
@@ -94,9 +120,14 @@ class Category(object):
 
         dropdown.on_change("value", callback)
 
-        return row(table_div, column(dropdown, line_plot))
+        # Category Type radio buttons
+        # TODO: functionality of Category Type
+        category_type_buttons = RadioGroup(labels=self.category_types,
+                                           active=0)
 
-    def create_line_plot(self, source_data, **kwargs):
+        return row(table_div, column(row(dropdown, category_type_buttons), line_plot))
+
+    def __create_line_plot(self, source_data, **kwargs):
 
         plot_feat_dict = {
             "width": [4, 4],
@@ -131,14 +162,26 @@ class Category(object):
             "All":  lines[0],
             "Cat": lines[1]
         }).describe()
+
         avg = values.loc["mean"]
         median = values.loc["50%"]
+        min = values.loc["min"]
+        max = values.loc["max"]
+        std = values.loc["std"]
 
         data = {
             "category": cat_name,
+            "last_all": lines[0][-1],
+            "last_category": lines[1][-1],
             "avg_all": avg["All"],
             "avg_category": avg["Cat"],
             "median_all": median["All"],
             "median_category": median["Cat"],
+            "min_all": min["All"],
+            "min_category": min["Cat"],
+            "max_all": max["All"],
+            "max_category": max["Cat"],
+            "std_all": std["All"],
+            "std_category": std["Cat"]
         }
         return data

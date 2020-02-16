@@ -47,7 +47,7 @@ class BokehApp(object):
 
     def category_gridplot(self):
 
-        return self.category_creator.get_gridplot(self.current_datasource)
+        return self.category_creator.gridplot(self.current_datasource)
 
     ########## old functions ##########
 
