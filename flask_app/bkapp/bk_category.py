@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from bokeh.models import ColumnDataSource, Select, RadioGroup
+from bokeh.models import ColumnDataSource, Select, RadioGroup, DataTable, TableColumn
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
@@ -30,6 +30,13 @@ class Category(object):
         Main method is .create_gridplot, that returns the whole responsive Visualizations and Div's with descriptions.
         When initializing the object, appropriate column names of expense DataFrame should be provided.
     """
+    description_html = """
+        <p id="category_title">{category}</p><br>
+        <p>Your average montly expenses from {category} are: {avg_category:.2f}</p><br>
+
+    """
+    # <p>Those expenses make on average <p id="category_percentage">{category_percentage:.2%}%</p> of all expenses!<br>
+    # <p>Mostly bought product from this category is {product_often}</p>
 
     statistics_table_html = """<table>
                     <tr>
@@ -71,10 +78,11 @@ class Category(object):
 
     category_types = ["Simple", "Extended"]
 
-    def __init__(self, category_colname, monthyear_colname, price_colname):
+    def __init__(self, category_colname, monthyear_colname, price_colname, product_colname):
         self.category = category_colname
         self.monthyear = monthyear_colname
         self.price = price_colname
+        self.product = product_colname
 
     def gridplot(self, dataframe):
         """Main function of the Category Object, that returns created gridplot for all Visualizations and Divs.
@@ -99,10 +107,20 @@ class Category(object):
         source_data = self.__get_source_data_for_multi_line_plot(aggregated, first_chosen_category)
         line_plot, line_plot_source = self.__create_line_plot(source_data)
 
-        # statistics table Div
+        # text data
         line_values = source_data["ys"]
         statistics_data = self.__get_statistics_data(line_values, first_chosen_category)
+
+        # Frequency Table
+        product_frequency_source = self.__get_product_frequency_data(
+            dataframe[dataframe[self.category] == first_chosen_category])
+        product_frequency_table = self.__create_frequency_table(product_frequency_source)
+
+        # statistics table Div
         table_div = Div(text=self.statistics_table_html.format(**statistics_data))
+
+        # description Div
+        description_div = Div(text=self.description_html.format(**statistics_data))
 
         # Category dropdown widget
         dropdown = Select(title='Category:', value=first_chosen_category, options=unique_categories)
@@ -118,6 +136,15 @@ class Category(object):
                 new_data = self.__get_statistics_data(new_ys, new)
                 table_div.text = self.statistics_table_html.format(**new_data)
 
+                # TODO: update description text
+
+                # product frequency table gets updated
+                new_data = self.__get_product_frequency_data(
+                    dataframe[dataframe[self.category] == new]
+                ).data
+                product_frequency_source.data = new_data
+
+
         dropdown.on_change("value", callback)
 
         # Category Type radio buttons
@@ -125,7 +152,8 @@ class Category(object):
         category_type_buttons = RadioGroup(labels=self.category_types,
                                            active=0)
 
-        return row(table_div, column(row(dropdown, category_type_buttons), line_plot))
+        return column(row(description_div, table_div, column(row(dropdown, category_type_buttons), line_plot)),
+                row(product_frequency_table))
 
     def __create_line_plot(self, source_data, **kwargs):
 
@@ -185,3 +213,21 @@ class Category(object):
             "std_category": std["Cat"]
         }
         return data
+
+    def __get_product_frequency_data(self, dataframe):
+
+        d = pd.DataFrame(dataframe[self.product].value_counts())
+        source = ColumnDataSource(d)
+
+        return source
+
+    def __create_frequency_table(self, source):
+
+        columns = [
+            TableColumn(field="index", title="Product"),
+            TableColumn(field="Product", title="Buy Count")
+        ]
+
+        dt = DataTable(source=source, columns=columns)
+
+        return dt

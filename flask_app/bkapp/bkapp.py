@@ -24,7 +24,7 @@ class BokehApp(object):
         self.category = col_mapping["category"]
         self.monthyear = col_mapping["monthyear"]
 
-        self.category_creator = Category(self.category, self.monthyear, self.price)
+        self.category_creator = Category(self.category, self.monthyear, self.price, self.product)
 
     def settings(self, cat_name):
         all_cats = sorted(self.org_datasource[cat_name].unique().tolist())
