@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from bokeh.models import ColumnDataSource, Select, RadioGroup, DataTable, TableColumn
+from bokeh.models import ColumnDataSource, Select, RadioGroup, DataTable, TableColumn, DateFormatter
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
@@ -78,11 +78,12 @@ class Category(object):
 
     category_types = ["Simple", "Extended"]
 
-    def __init__(self, category_colname, monthyear_colname, price_colname, product_colname):
+    def __init__(self, category_colname, monthyear_colname, price_colname, product_colname, date_colname):
         self.category = category_colname
         self.monthyear = monthyear_colname
         self.price = price_colname
         self.product = product_colname
+        self.date = date_colname
 
     def gridplot(self, dataframe):
         """Main function of the Category Object, that returns created gridplot for all Visualizations and Divs.
@@ -98,6 +99,10 @@ class Category(object):
             Returns Bokeh layout, which can be embedded into Web Application.
         """
 
+        # TODO: reorder variables, introduce new variables
+        # TODO: rethink how sources for widgets and for text should be created
+        # TODO: add capability to change category filtering (Extended)
+
         # unique categories used in Category View
         unique_categories = get_unique_values_from_column(dataframe, self.category)
         first_chosen_category = unique_categories[0]
@@ -111,10 +116,25 @@ class Category(object):
         line_values = source_data["ys"]
         statistics_data = self.__get_statistics_data(line_values, first_chosen_category)
 
+        # TODO: Limit both tables below to 5 or 10 rows by one variable
+
         # Frequency Table
         product_frequency_source = self.__get_product_frequency_data(
             dataframe[dataframe[self.category] == first_chosen_category])
         product_frequency_table = self.__create_frequency_table(product_frequency_source)
+
+        # Transactions for Category ColumnDataSource TODO: change comment
+        transactions_category_df = dataframe[dataframe[self.category] == first_chosen_category]
+        all_transactions_source = ColumnDataSource(transactions_category_df)
+        top_price_source = ColumnDataSource(
+            transactions_category_df.sort_values(by=[self.price], ascending=False).head(5)
+        )
+
+        # Top Price DataTable
+        top_price_datatable = self.__create_top_price_datatable(top_price_source)
+
+        # All Transactions DataTable
+        transactions_datatable = self.__create_top_price_datatable(all_transactions_source) #TODO: add separate method
 
         # statistics table Div
         table_div = Div(text=self.statistics_table_html.format(**statistics_data))
@@ -135,8 +155,7 @@ class Category(object):
                 # statistics table div gets updated with the new category data
                 new_data = self.__get_statistics_data(new_ys, new)
                 table_div.text = self.statistics_table_html.format(**new_data)
-
-                # TODO: update description text
+                description_div.text = self.description_html.format(**new_data) # TODO: get separate dict
 
                 # product frequency table gets updated
                 new_data = self.__get_product_frequency_data(
@@ -144,6 +163,12 @@ class Category(object):
                 ).data
                 product_frequency_source.data = new_data
 
+                # update two tables
+                new_df = dataframe[dataframe[self.category] == new]
+                all_transactions_source.data = ColumnDataSource(new_df).data
+                top_price_source.data = ColumnDataSource(
+                    new_df.sort_values(by=[self.price], ascending=False).head(5)
+                ).data
 
         dropdown.on_change("value", callback)
 
@@ -153,7 +178,7 @@ class Category(object):
                                            active=0)
 
         return column(row(description_div, table_div, column(row(dropdown, category_type_buttons), line_plot)),
-                row(product_frequency_table))
+                row(product_frequency_table, top_price_datatable, transactions_datatable))
 
     def __create_line_plot(self, source_data, **kwargs):
 
@@ -228,6 +253,18 @@ class Category(object):
             TableColumn(field="Product", title="Buy Count")
         ]
 
-        dt = DataTable(source=source, columns=columns)
+        dt = DataTable(source=source, columns=columns, header_row=True)
 
+        return dt
+
+    def __create_top_price_datatable(self, source):
+
+        columns = [
+            TableColumn(field=self.date, title="Date", formatter=DateFormatter(format="%d-%m-%Y")),
+            TableColumn(field=self.product, title="Product"),
+            TableColumn(field=self.price, title="Price"),
+            TableColumn(field=self.category, title="Category")
+        ]
+
+        dt = DataTable(source=source, columns=columns, header_row=True)
         return dt

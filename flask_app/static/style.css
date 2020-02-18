@@ -37,11 +37,11 @@ html { font-family: "Lato", sans-serif; background: white; padding: 1rem; }
 
 /* content */
 
-.content {border: 0px solid red;
+ .content {border: 0px solid red;
           padding: 12px 12px;
           position: relative; }
 
-.content-container {display: flex;
+ content-container {display: flex;
                     flex-direction: row; }
 
 .text {color: #C7C3C3; }
@@ -60,4 +60,5 @@ html { font-family: "Lato", sans-serif; background: white; padding: 1rem; }
 
 #category_text {border: 0px solid black; width: 30%; }
 #category_barplot {border: 0px solid black; width: 100%;}
-#category_barplot div {float: right; }
+/* #category_barplot div {float: right; }
+*/
