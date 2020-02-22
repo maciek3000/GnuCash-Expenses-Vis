@@ -8,3 +8,9 @@ attrs:
 
   Grid:
     grid_line_color: "#FFFFFF"
+
+  Axis:
+    major_label_text_font: "Lato"
+    axis_label_text_font: "Lato"
+
+

@@ -31,8 +31,8 @@ class Category(object):
         When initializing the object, appropriate column names of expense DataFrame should be provided.
     """
     description_html = """
-        <p id="category_title">{category}</p><br>
-        <p>Your average montly expenses from {category} are: {avg_category:.2f}</p><br>
+        <p id="category_title" style="font-family: inherit">{category}</p>
+        <p>Your average montly expenses from {category} are: {avg_category:.2f}</p>
 
     """
     # <p>Those expenses make on average <p id="category_percentage">{category_percentage:.2%}%</p> of all expenses!<br>
@@ -126,24 +126,23 @@ class Category(object):
         # Transactions for Category ColumnDataSource TODO: change comment
         transactions_category_df = dataframe[dataframe[self.category] == first_chosen_category]
         all_transactions_source = ColumnDataSource(transactions_category_df)
-        top_price_source = ColumnDataSource(
-            transactions_category_df.sort_values(by=[self.price], ascending=False).head(5)
-        )
+        # top_price_source = ColumnDataSource(
+        #     transactions_category_df.sort_values(by=[self.price], ascending=False).head(5)
+        # )
 
-        # Top Price DataTable
-        top_price_datatable = self.__create_top_price_datatable(top_price_source)
 
         # All Transactions DataTable
         transactions_datatable = self.__create_top_price_datatable(all_transactions_source) #TODO: add separate method
 
         # statistics table Div
-        table_div = Div(text=self.statistics_table_html.format(**statistics_data))
+        table_div = Div(text=self.statistics_table_html.format(**statistics_data), css_classes=["statistics_div"])
 
         # description Div
-        description_div = Div(text=self.description_html.format(**statistics_data))
+        description_div = Div(text=self.description_html.format(**statistics_data), css_classes=["description_div"])
 
         # Category dropdown widget
-        dropdown = Select(title='Category:', value=first_chosen_category, options=unique_categories)
+        dropdown = Select(title='Category:', value=first_chosen_category, options=unique_categories,
+                          css_classes=["category_dropdown"])
 
         # callback for dropdown, which will trigger changes in the view upon change of the category
         def callback(attr, old, new):
@@ -166,9 +165,9 @@ class Category(object):
                 # update two tables
                 new_df = dataframe[dataframe[self.category] == new]
                 all_transactions_source.data = ColumnDataSource(new_df).data
-                top_price_source.data = ColumnDataSource(
-                    new_df.sort_values(by=[self.price], ascending=False).head(5)
-                ).data
+                # top_price_source.data = ColumnDataSource(
+                #     new_df.sort_values(by=[self.price], ascending=False).head(5)
+                # ).data
 
         dropdown.on_change("value", callback)
 
@@ -178,7 +177,7 @@ class Category(object):
                                            active=0)
 
         return column(row(description_div, table_div, column(row(dropdown, category_type_buttons), line_plot)),
-                row(product_frequency_table, top_price_datatable, transactions_datatable))
+                row(product_frequency_table, transactions_datatable))
 
     def __create_line_plot(self, source_data, **kwargs):
 
