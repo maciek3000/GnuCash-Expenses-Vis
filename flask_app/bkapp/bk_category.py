@@ -31,50 +31,53 @@ class Category(object):
         When initializing the object, appropriate column names of expense DataFrame should be provided.
     """
     description_html = """
-        <p id="category_title" style="font-family: inherit">{category}</p>
         <p>Your average montly expenses from {category} are: {avg_category:.2f}</p>
-
     """
     # <p>Those expenses make on average <p id="category_percentage">{category_percentage:.2%}%</p> of all expenses!<br>
     # <p>Mostly bought product from this category is {product_often}</p>
 
     statistics_table_html = """<table>
-                    <tr>
-                        <th>Monthly</th>
-                        <th>All</th>
-                        <th>{category}</th>
-                    </tr>
-                    <tr>
-                        <td>Last Month:</td>
-                        <td>{last_all:.2f}</td>
-                        <td>{last_category:.2f}</td>
-                    </tr>
-                    <tr>
-                        <td>Average</td>
-                        <td>{avg_all:.2f}</td>
-                        <td>{avg_category:.2f}</td>
-                    </tr>
-                    <tr>
-                        <td>Median</td>
-                        <td>{median_all:.2f}</td>
-                        <td>{median_category:.2f}</td>
-                    </tr>
-                    <tr>
-                        <td>Min</td>
-                        <td>{min_all:.2f}</td>
-                        <td>{min_category:.2f}</td>
-                    </tr>
-                    <tr>
-                        <td>Max</td>
-                        <td>{max_all:.2f}</td>
-                        <td>{max_category:.2f}</td>
-                    </tr>
-                    <tr>
-                        <td>Standard Deviation</td>
-                        <td>{std_all:.2f}</td>
-                        <td>{std_category:.2f}</td>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <th scope="col">Monthly</th>
+                            <th scope="col">All</th>
+                            <th scope="col">{category}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Last Month:</th>
+                            <td>{last_all:.2f}</td>
+                            <td>{last_category:.2f}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Average</th>
+                            <td>{avg_all:.2f}</td>
+                            <td>{avg_category:.2f}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Median</th>
+                            <td>{median_all:.2f}</td>
+                            <td>{median_category:.2f}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Min</th>
+                            <td>{min_all:.2f}</td>
+                            <td>{min_category:.2f}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Max</th>
+                            <td>{max_all:.2f}</td>
+                            <td>{max_category:.2f}</td>
+                        </tr>
+                        <tr>
+                            <th scope="row">Standard Deviation</th>
+                            <td>{std_all:.2f}</td>
+                            <td>{std_category:.2f}</td>
+                        </tr>
+                    </tbody>
                 </table>"""
+                #TODO: add number of items bought
 
     category_types = ["Simple", "Extended"]
 
@@ -134,6 +137,10 @@ class Category(object):
         # All Transactions DataTable
         transactions_datatable = self.__create_top_price_datatable(all_transactions_source) #TODO: add separate method
 
+        # category name Div
+        category_name_div = Div(text="<h1>{category}</h1>".format(category=first_chosen_category),
+                                css_classes=["category_name"], sizing_mode="stretch_width")
+
         # statistics table Div
         table_div = Div(text=self.statistics_table_html.format(**statistics_data), css_classes=["statistics_div"])
 
@@ -153,6 +160,7 @@ class Category(object):
 
                 # statistics table div gets updated with the new category data
                 new_data = self.__get_statistics_data(new_ys, new)
+                category_name_div.text = "<h1>{category}</h1>".format(category=new)
                 table_div.text = self.statistics_table_html.format(**new_data)
                 description_div.text = self.description_html.format(**new_data) # TODO: get separate dict
 
@@ -176,8 +184,13 @@ class Category(object):
         category_type_buttons = RadioGroup(labels=self.category_types,
                                            active=0)
 
-        return column(row(description_div, table_div, column(row(dropdown, category_type_buttons), line_plot)),
-                row(product_frequency_table, transactions_datatable))
+        grid = column(
+            row(category_name_div),
+            row(description_div, table_div, column(row(dropdown, category_type_buttons), line_plot)),
+            row(product_frequency_table, transactions_datatable)
+        )
+
+        return grid
 
     def __create_line_plot(self, source_data, **kwargs):
 

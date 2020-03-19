@@ -1,8 +1,14 @@
-.bk-root {
-    font-family: inherit;
+.statistics_div table {
     color: inherit;
+    font-family: inherit;
+    font-size: inherit;
 }
 
+.bk.category_name {
+    text-align: left;
+    font-size: 1.5em;
+    color: red;
+}
 /*
 
 #category_view {border: 0px solid black; width: 100%;}
