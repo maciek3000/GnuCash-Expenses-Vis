@@ -1,14 +1,13 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='category.css') }}">
 {% extends 'base.html' %}
 
 {% block title %}Categories{% endblock %}
 
 {% block content %}
-<div class="text" id="category_text">
-        <div class="title">Category Overview</div>
+<div class="title">
+    <h1>Expense Categories</h1>
 </div>
 <div class="content-container">
-    <div id="category_view">
-        {{ script|safe }}
-    </div>
+    {{ script|safe }}
 </div>
 {% endblock %}

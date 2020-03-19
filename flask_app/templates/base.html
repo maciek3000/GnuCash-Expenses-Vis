@@ -3,18 +3,18 @@
 <link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <body>
-<div class="main">
-    <div class="menu">
-        <div id="settings"><a href="{{ url_for('settings.settings') }}">&#9776;</a></div>
-        <div><a href="{{ url_for('overview') }}">Overview</a></div>
-        <div><a href="{{ url_for('trends.trends') }}">Trends</a></div>
-        <div><a href="{{ url_for('category.category') }}">Categories</a></div>
+    <div class="main">
+        <div class="menu">
+            <div><a href="{{ url_for('settings.settings') }}", id="settings">&#9776;</a></div>
+            <div><a href="{{ url_for('overview') }}">Overview</a></div>
+            <div><a href="{{ url_for('trends.trends') }}">Trends</a></div>
+            <div><a href="{{ url_for('category.category') }}">Categories</a></div>
+        </div>
+        {% for message in get_flashed_messages() %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
     </div>
-    {% for message in get_flashed_messages() %}
-        <div class="flash">{{ message }}</div>
-    {% endfor %}
-    <div class="content">
-        {% block content %}{% endblock %}
-    </div>
-</div>
 </body>
