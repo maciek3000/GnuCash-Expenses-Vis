@@ -80,6 +80,12 @@ class Category(object):
         self.currency = currency_colname
         self.shop = shop_colname
 
+        self.current_df = None
+        self.categories = None
+        self.categories_df = None
+        self.single_category_df = None
+        self.months = None
+
         self.g_category_title = "Category Title"
         self.g_dropdown = "Dropdown"
         self.g_statistics_table = "Statistics Table"
@@ -90,29 +96,20 @@ class Category(object):
         self.grid_elem_dict = None
         self.grid_source_dict = None
 
+
     def new_gridplot(self, dataframe):
 
-        #categories = unique_values_from_column(dataframe, self.category)
-        #categories_df = aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
-        #initial_category = categories[0]
-
-        self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements(dataframe)
-
-        # category title Div
-        #category_title_div = Div(css_classes=["category_title"], sizing_mode="stretch_width")
-
-        # statistics table Div
-        # table_div = Div(text=self.statistics_table_html.format(**statistics_data), css_classes=["statistics_div"])
-
-        # Category dropdown widget
-         #dropdown = Select(value=initial_category, options=categories, css_classes=["category_dropdown"])
-
-
+        self.current_df = dataframe
+        self.categories = unique_values_from_column(dataframe, self.category)
+        self.months = unique_values_from_column(dataframe, self.monthyear)
+        self.categories_df = aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
+        self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements()
 
         def callback(attr, new, old):
-            pass
+            if new != old:
+                self.update_grid(new)
 
-        #dropdown.on_change("value", callback)
+        self.grid_elem_dict[self.g_dropdown].on_change("value", callback)
 
         grid = column(
              row(self.grid_elem_dict[self.g_category_title]),
@@ -126,24 +123,46 @@ class Category(object):
 
     def update_grid(self, category):
 
-        pass
+        self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=category)
+        self.grid_elem_dict[self.g_statistics_table].text = self.__update_statistics_table(category)
+
+        self.__update_line_plot(category)
+        self.__update_product_histogram_table(category)
+
+        # new_y = self.__dict_for_line_plot(categories_df, new)["y"]
+        # print(new, new_y)
+        # line_plot.y_range.end = np.nanmax(new_y)
+        # line_plot.line.source.data["y"] = new_y
+        #
+        # # statistics table div gets updated with the new category data
+        # #new_data = self.__get_statistics_data(new_ys, new)
+        # category_title_div.text = self.category_title.format(category=new)
+        # #table_div.text = self.statistics_table_html.format(**new_data)
+        # # description_div.text = self.description_html.format(**new_data) # TODO: get separate dict
+        #
+        # # product frequency table gets updated
+        # new_data = self.__get_product_frequency_data(
+        #     dataframe[dataframe[self.category] == new]
+        # ).data
+        # product_frequency_source.data = new_data
+        #
+        # # update two tables
+        # new_df = dataframe[dataframe[self.category] == new]
+        # all_transactions_source.data = ColumnDataSource(new_df).data
+        # # top_price_source.data = ColumnDataSource(
+        # #     new_df.sort_values(by=[self.price], ascending=False).head(5)
+        # # ).data
 
 
-
-    def initialize_grid_elements(self, df):
+    def initialize_grid_elements(self):
 
         elem_dict = {}
         source_dict = {}
 
-        categories = unique_values_from_column(df, self.category)
-        initial_category = categories[0]
-
-        categories_df = aggregated_dataframe_sum(df, [self.monthyear, self.category])
-
         elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"]) #stretch_width
         elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_div"])
 
-        source_dict[self.g_line_plot] = self.__create_line_plot_source(categories_df)
+        source_dict[self.g_line_plot] = self.__create_line_plot_source()
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
 
         source_dict[self.g_product_histogram] = self.__create_product_histogram_source()
@@ -152,21 +171,21 @@ class Category(object):
         source_dict[self.g_transactions] = self.__create_transactions_source()
         elem_dict[self.g_transactions] = self.__create_transactions_table(source_dict[self.g_transactions])
 
-        elem_dict[self.g_dropdown] = Select(value=initial_category, options=categories,
+        initial_category = self.categories[0]
+        elem_dict[self.g_dropdown] = Select(value=initial_category, options=self.categories,
                           css_classes=["category_dropdown"])
 
         self.update_grid(initial_category)
 
         return elem_dict, source_dict
 
-    def __create_line_plot_source(self, df):
+    def __create_line_plot_source(self):
 
-        months = unique_values_from_column(df, self.monthyear)
-        temp_values = [1 for month in months]
+        temp_values = [1 for month in self.months]
 
         source = ColumnDataSource(
             data={
-                "x": months,
+                "x": self.months,
                 "y": temp_values
             }
         )
@@ -225,6 +244,42 @@ class Category(object):
 
         dt = DataTable(source=source, columns=columns, header_row=True)
         return dt
+
+    def __update_statistics_table(self, category):
+        #TODO:
+        self.grid_elem_dict[self.g_statistics_table].text = self.statistics_table_html
+
+    def __update_line_plot(self, category):
+
+        values = self.__values_from_category(category)
+        self.grid_elem_dict[self.g_line_plot].y_range.end = np.nanmax(values)
+        self.grid_source_dict[self.g_line_plot].data["y"] = values
+
+    def __update_product_histogram_table(self, category):
+
+
+
+
+    def __values_from_category(self, category):
+
+        category_dict = self.categories_df[self.categories_df[self.category] == category].set_index(
+                        self.monthyear)[self.price].to_dict()
+        values = [category_dict[month] if month in category_dict else np.nan for month in self.months]
+
+        return values
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     def gridplot(self, dataframe):
