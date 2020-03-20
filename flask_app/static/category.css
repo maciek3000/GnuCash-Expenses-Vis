@@ -4,10 +4,10 @@
     font-size: inherit;
 }
 
-.bk.category_name {
+.bk.category_title h1 {
     text-align: left;
-    font-size: 1.5em;
-    color: red;
+    color: #5E85B9;
+    font-size: 3em;
 }
 /*
 

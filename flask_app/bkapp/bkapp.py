@@ -10,6 +10,8 @@ from .bk_category import Category
 
 class BokehApp(object):
 
+    category_types = ["Simple", "Extended"]
+
     def __init__(self, dataframe, col_mapping):
         self.org_datasource = dataframe
         self.current_datasource = dataframe
@@ -24,7 +26,8 @@ class BokehApp(object):
         self.category = col_mapping["category"]
         self.monthyear = col_mapping["monthyear"]
 
-        self.category_creator = Category(self.category, self.monthyear, self.price, self.product, self.date)
+        self.category_creator = Category(self.category, self.monthyear, self.price, self.product,
+                                         self.date, self.currency, self.shop)
 
     def settings(self, cat_name):
         all_cats = sorted(self.org_datasource[cat_name].unique().tolist())
@@ -47,7 +50,14 @@ class BokehApp(object):
 
     def category_gridplot(self):
 
-        return self.category_creator.gridplot(self.current_datasource)
+        return self.category_creator.new_gridplot(self.current_datasource)
+
+    #TODO: category type radio buttons
+
+    # Category Type radio buttons
+    # TODO: functionality of Category Type
+    #category_type_buttons = RadioGroup(labels=self.category_types,
+    #                                   active=0)
 
     ########## old functions ##########
 

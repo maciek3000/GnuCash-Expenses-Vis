@@ -1,4 +1,4 @@
-from flask_app.bkapp.bk_category import get_aggregated_dataframe_sum, get_unique_values_from_column
+from flask_app.bkapp.bk_category import aggregated_dataframe_sum, unique_values_from_column
 import pytest
 import pandas as pd
 import numpy as np
@@ -14,7 +14,7 @@ from math import isclose
          ["on", "one", "one2"]),
 ))
 def test_get_unique_values_from_column(df, col_name, expected_result):
-    result = get_unique_values_from_column(df, col_name)
+    result = unique_values_from_column(df, col_name)
     assert result == expected_result
 
 
@@ -33,7 +33,7 @@ def test_get_unique_values_from_column(df, col_name, expected_result):
                                          "c": [4, 6, 5, 6]})),
                           ))
 def test_get_aggregated_dataframe_sum(df, list_of_cols, output):
-    result = get_aggregated_dataframe_sum(df, list_of_cols)
+    result = aggregated_dataframe_sum(df, list_of_cols)
     assert result.equals(output)
 
 

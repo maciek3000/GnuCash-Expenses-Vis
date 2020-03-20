@@ -2,25 +2,25 @@ import numpy as np
 import pandas as pd
 
 from bokeh.models import ColumnDataSource, Select, RadioGroup, DataTable, TableColumn, DateFormatter
-from bokeh.layouts import column, row
+from bokeh.layouts import column, row, grid
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
 
 
-def get_unique_values_from_column(df, col_name):
-    """Returns sorted and unique values from a column of col_name from a DataFrame df.
+def unique_values_from_column(df, column):
+    """Returns sorted and unique values from a column from a DataFrame df.
 
         If there are any NaN values, they are replaced to string "nan".
      """
-    return sorted(df[col_name].replace({np.nan: "nan"}).unique().tolist())
+    return sorted(df[column].replace({np.nan: "nan"}).unique().tolist())
 
 
-def get_aggregated_dataframe_sum(df, list_of_cols):
-    """Returns new DataFrame from a df, aggregated by column names provided in list_of_cols.
+def aggregated_dataframe_sum(df, columns):
+    """Returns new DataFrame from a df, aggregated by column names provided in columns.
 
         Indexes are reset and values are sorted by the columns that were provided in list_of_cols.
     """
-    agg = df.groupby(list_of_cols).sum().reset_index().sort_values(by=list_of_cols)
+    agg = df.groupby(columns).sum().reset_index().sort_values(by=columns)
     return agg
 
 
@@ -30,63 +30,202 @@ class Category(object):
         Main method is .create_gridplot, that returns the whole responsive Visualizations and Div's with descriptions.
         When initializing the object, appropriate column names of expense DataFrame should be provided.
     """
-    description_html = """
-        <p>Your average montly expenses from {category} are: {avg_category:.2f}</p>
-    """
-    # <p>Those expenses make on average <p id="category_percentage">{category_percentage:.2%}%</p> of all expenses!<br>
-    # <p>Mostly bought product from this category is {product_often}</p>
+
+    category_title = "<h1>{category}</h1>"
 
     statistics_table_html = """<table>
                     <thead>
                         <tr>
-                            <th scope="col">Monthly</th>
-                            <th scope="col">All</th>
-                            <th scope="col">{category}</th>
+                            <th scope="col"> </th>
+                            <th scope="col">[Currency]</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th scope="row">Last Month:</th>
-                            <td>{last_all:.2f}</td>
+                            <th scope="row">Last Month</th>
                             <td>{last_category:.2f}</td>
                         </tr>
                         <tr>
                             <th scope="row">Average</th>
-                            <td>{avg_all:.2f}</td>
                             <td>{avg_category:.2f}</td>
                         </tr>
                         <tr>
                             <th scope="row">Median</th>
-                            <td>{median_all:.2f}</td>
                             <td>{median_category:.2f}</td>
                         </tr>
                         <tr>
                             <th scope="row">Min</th>
-                            <td>{min_all:.2f}</td>
                             <td>{min_category:.2f}</td>
                         </tr>
                         <tr>
                             <th scope="row">Max</th>
-                            <td>{max_all:.2f}</td>
                             <td>{max_category:.2f}</td>
                         </tr>
                         <tr>
                             <th scope="row">Standard Deviation</th>
-                            <td>{std_all:.2f}</td>
                             <td>{std_category:.2f}</td>
                         </tr>
                     </tbody>
                 </table>"""
                 #TODO: add number of items bought
 
-    category_types = ["Simple", "Extended"]
 
-    def __init__(self, category_colname, monthyear_colname, price_colname, product_colname, date_colname):
+    def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
+                 date_colname, currency_colname, shop_colname):
         self.category = category_colname
         self.monthyear = monthyear_colname
         self.price = price_colname
         self.product = product_colname
         self.date = date_colname
+        self.currency = currency_colname
+        self.shop = shop_colname
+
+        self.g_category_title = "Category Title"
+        self.g_dropdown = "Dropdown"
+        self.g_statistics_table = "Statistics Table"
+        self.g_line_plot = "Line Plot"
+        self.g_product_histogram = "Product Histogram"
+        self.g_transactions = "Transactions"
+
+        self.grid_elem_dict = None
+        self.grid_source_dict = None
+
+    def new_gridplot(self, dataframe):
+
+        #categories = unique_values_from_column(dataframe, self.category)
+        #categories_df = aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
+        #initial_category = categories[0]
+
+        self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements(dataframe)
+
+        # category title Div
+        #category_title_div = Div(css_classes=["category_title"], sizing_mode="stretch_width")
+
+        # statistics table Div
+        # table_div = Div(text=self.statistics_table_html.format(**statistics_data), css_classes=["statistics_div"])
+
+        # Category dropdown widget
+         #dropdown = Select(value=initial_category, options=categories, css_classes=["category_dropdown"])
+
+
+
+        def callback(attr, new, old):
+            pass
+
+        #dropdown.on_change("value", callback)
+
+        grid = column(
+             row(self.grid_elem_dict[self.g_category_title]),
+             row(self.grid_elem_dict[self.g_statistics_table], column(
+                            self.grid_elem_dict[self.g_dropdown], self.grid_elem_dict[self.g_line_plot])),
+             row(self.grid_elem_dict[self.g_product_histogram], self.grid_elem_dict[self.g_transactions]),
+            sizing_mode="stretch_both"
+        )
+
+        return grid
+
+    def update_grid(self, category):
+
+        pass
+
+
+
+    def initialize_grid_elements(self, df):
+
+        elem_dict = {}
+        source_dict = {}
+
+        categories = unique_values_from_column(df, self.category)
+        initial_category = categories[0]
+
+        categories_df = aggregated_dataframe_sum(df, [self.monthyear, self.category])
+
+        elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"]) #stretch_width
+        elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_div"])
+
+        source_dict[self.g_line_plot] = self.__create_line_plot_source(categories_df)
+        elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
+
+        source_dict[self.g_product_histogram] = self.__create_product_histogram_source()
+        elem_dict[self.g_product_histogram] = self.__create_product_histogram_table(source_dict[self.g_product_histogram])
+
+        source_dict[self.g_transactions] = self.__create_transactions_source()
+        elem_dict[self.g_transactions] = self.__create_transactions_table(source_dict[self.g_transactions])
+
+        elem_dict[self.g_dropdown] = Select(value=initial_category, options=categories,
+                          css_classes=["category_dropdown"])
+
+        self.update_grid(initial_category)
+
+        return elem_dict, source_dict
+
+    def __create_line_plot_source(self, df):
+
+        months = unique_values_from_column(df, self.monthyear)
+        temp_values = [1 for month in months]
+
+        source = ColumnDataSource(
+            data={
+                "x": months,
+                "y": temp_values
+            }
+        )
+        return source
+
+    def __create_line_plot(self, cds):
+
+        p = figure(width=360, height=360, x_range=cds.data["x"])
+        p.line(x="x", y="y", source=cds, color="blue", line_width=4)
+
+        return p
+
+    def __create_product_histogram_source(self):
+
+        source = ColumnDataSource(
+            data={
+                "index": [0],
+                "Product": [0]
+            }
+        )
+
+        return source
+
+    def __create_product_histogram_table(self, source):
+
+        columns = [
+            TableColumn(field="index", title="Product"),
+            TableColumn(field="Product", title="Buy Count")
+        ]
+
+        dt = DataTable(source=source, columns=columns, header_row=True)
+
+        return dt
+
+    def __create_transactions_source(self):
+
+        source = ColumnDataSource(
+            data={
+                self.date: 0,
+                self.product: 0,
+                self.price: 0,
+                self.shop: 0
+            }
+        )
+
+        return source
+
+    def __create_transactions_table(self, source):
+
+        columns = [
+            TableColumn(field=self.date, title="Date", formatter=DateFormatter(format="%d-%m-%Y")),
+            TableColumn(field=self.product, title="Product"),
+            TableColumn(field=self.price, title="Price"),
+            TableColumn(field=self.shop, title="Shop")
+        ]
+
+        dt = DataTable(source=source, columns=columns, header_row=True)
+        return dt
+
 
     def gridplot(self, dataframe):
         """Main function of the Category Object, that returns created gridplot for all Visualizations and Divs.
@@ -107,27 +246,36 @@ class Category(object):
         # TODO: add capability to change category filtering (Extended)
 
         # unique categories used in Category View
-        unique_categories = get_unique_values_from_column(dataframe, self.category)
-        first_chosen_category = unique_categories[0]
+        categories = unique_values_from_column(dataframe, self.category)
+        categories_df = aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
 
-        # multi line plot
-        aggregated = get_aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
-        source_data = self.__get_source_data_for_multi_line_plot(aggregated, first_chosen_category)
-        line_plot, line_plot_source = self.__create_line_plot(source_data)
+        initial_category = categories[0]
+
+        # category title Div
+        category_title_div = Div(text=self.category_title.format(category=initial_category),
+                                css_classes=["category_title"], sizing_mode="stretch_width")
+
+        # Category dropdown widget
+        dropdown = Select(value=initial_category, options=categories,
+                          css_classes=["category_dropdown"])
+
+
+        category_data_dict = self.__dict_for_line_plot(categories_df, initial_category)
+        line_plot, line_plot_source = self.__create_line_plot(category_data_dict)
 
         # text data
-        line_values = source_data["ys"]
-        statistics_data = self.__get_statistics_data(line_values, first_chosen_category)
+        #line_values = line_plot_dict["y"]
+        statistics_data = self.__get_statistics_data(category_data_dict["y"], initial_category)
 
         # TODO: Limit both tables below to 5 or 10 rows by one variable
 
         # Frequency Table
         product_frequency_source = self.__get_product_frequency_data(
-            dataframe[dataframe[self.category] == first_chosen_category])
-        product_frequency_table = self.__create_frequency_table(product_frequency_source)
+            dataframe[dataframe[self.category] == initial_category])
+        product_frequency_table = self.__create_product_frequency_table(product_frequency_source)
 
         # Transactions for Category ColumnDataSource TODO: change comment
-        transactions_category_df = dataframe[dataframe[self.category] == first_chosen_category]
+        transactions_category_df = dataframe[dataframe[self.category] == initial_category]
         all_transactions_source = ColumnDataSource(transactions_category_df)
         # top_price_source = ColumnDataSource(
         #     transactions_category_df.sort_values(by=[self.price], ascending=False).head(5)
@@ -137,32 +285,28 @@ class Category(object):
         # All Transactions DataTable
         transactions_datatable = self.__create_top_price_datatable(all_transactions_source) #TODO: add separate method
 
-        # category name Div
-        category_name_div = Div(text="<h1>{category}</h1>".format(category=first_chosen_category),
-                                css_classes=["category_name"], sizing_mode="stretch_width")
-
         # statistics table Div
         table_div = Div(text=self.statistics_table_html.format(**statistics_data), css_classes=["statistics_div"])
 
         # description Div
-        description_div = Div(text=self.description_html.format(**statistics_data), css_classes=["description_div"])
+        # description_div = Div(text=self.description_html.format(**statistics_data), css_classes=["description_div"])
 
-        # Category dropdown widget
-        dropdown = Select(title='Category:', value=first_chosen_category, options=unique_categories,
-                          css_classes=["category_dropdown"])
+
 
         # callback for dropdown, which will trigger changes in the view upon change of the category
         def callback(attr, old, new):
             if new != old:
                 # updating lines in the plot - total stays the same, whereas category line changes
-                new_ys = self.__get_source_data_for_multi_line_plot(aggregated, new)["ys"]
-                line_plot_source.data["ys"] = new_ys
+                new_y = self.__dict_for_line_plot(categories_df, new)["y"]
+                print(new, new_y)
+                line_plot.y_range.end = np.nanmax(new_y)
+                line_plot.line.source.data["y"] = new_y
 
                 # statistics table div gets updated with the new category data
-                new_data = self.__get_statistics_data(new_ys, new)
-                category_name_div.text = "<h1>{category}</h1>".format(category=new)
-                table_div.text = self.statistics_table_html.format(**new_data)
-                description_div.text = self.description_html.format(**new_data) # TODO: get separate dict
+                #new_data = self.__get_statistics_data(new_ys, new)
+                category_title_div.text = self.category_title.format(category=new)
+                #table_div.text = self.statistics_table_html.format(**new_data)
+                # description_div.text = self.description_html.format(**new_data) # TODO: get separate dict
 
                 # product frequency table gets updated
                 new_data = self.__get_product_frequency_data(
@@ -179,75 +323,71 @@ class Category(object):
 
         dropdown.on_change("value", callback)
 
-        # Category Type radio buttons
-        # TODO: functionality of Category Type
-        category_type_buttons = RadioGroup(labels=self.category_types,
-                                           active=0)
+        grd = grid(column(
+            row(category_title_div),
+            row(table_div, column(dropdown, line_plot)), #table_div,
+            row(product_frequency_table, transactions_datatable),
+        ))
 
-        grid = column(
-            row(category_name_div),
-            row(description_div, table_div, column(row(dropdown, category_type_buttons), line_plot)),
-            row(product_frequency_table, transactions_datatable)
-        )
+        for elem in grd.children:
+            print(elem)
 
-        return grid
+        return grd
 
-    def __create_line_plot(self, source_data, **kwargs):
-
-        plot_feat_dict = {
-            "width": [4, 4],
-            "color": ["blue", "red"]
-        }
-
-        source = ColumnDataSource({
-            **source_data,
-            **plot_feat_dict,
-            **kwargs
-        })
-
-        p = figure(width=360, height=360, x_range=source.data["xs"][0], y_range=[0, max(source.data["ys"][0])])
-        p.multi_line("xs", "ys", source=source, color="color", line_width="width")
-
-        return p, source
-
-    def __get_source_data_for_multi_line_plot(self, agg, cat):
-        months = get_unique_values_from_column(agg, self.monthyear)
-        total_values = agg.groupby([self.monthyear]).sum()[self.price].tolist()
-
-        category_dict = agg[agg[self.category] == cat].set_index(self.monthyear)[self.price].to_dict()
+    def __dict_for_line_plot(self, df, category):
+        months = unique_values_from_column(df, self.monthyear)
+        category_dict = df[df[self.category] == category].set_index(self.monthyear)[self.price].to_dict()
         category_values = [category_dict[month] if month in category_dict else np.nan for month in months]
+
         data = {
-            "xs": [months, months],
-            "ys": [total_values, category_values]
+            "x": months,
+            "y": category_values,
         }
         return data
 
-    def __get_statistics_data(self, lines, cat_name):
-        values = pd.DataFrame({
-            "All":  lines[0],
-            "Cat": lines[1]
+    def __create_line_plot_old(self, source_data, **kwargs):
+
+        plot_feat_dict = {
+            "width": 4,
+            "color": "blue",
+        }
+
+        source = ColumnDataSource(data={
+            **source_data,
+            **kwargs,
+        })
+
+        p = figure(width=360, height=360, x_range=source.data["x"], y_range=[0, max(source.data["y"])])
+        p.line(x="x", y="y", source=source, color="blue", line_width=4)
+
+        return p, source
+
+    def __get_statistics_data(self, values, cat_name):
+        describe_df = pd.DataFrame({
+            #"All":  lines[0],
+            "Cat": values
         }).describe()
 
-        avg = values.loc["mean"]
-        median = values.loc["50%"]
-        min = values.loc["min"]
-        max = values.loc["max"]
-        std = values.loc["std"]
+        avg = describe_df.loc["mean"]
+        median = describe_df.loc["50%"]
+        min = describe_df.loc["min"]
+        max = describe_df.loc["max"]
+        std = describe_df.loc["std"]
 
         data = {
             "category": cat_name,
-            "last_all": lines[0][-1],
-            "last_category": lines[1][-1],
-            "avg_all": avg["All"],
+            #"last_all": lines[0][-1],
+            "last_category": values[-1],
+            #"avg_all": avg["All"],
             "avg_category": avg["Cat"],
-            "median_all": median["All"],
+            #"median_all": median["All"],
             "median_category": median["Cat"],
-            "min_all": min["All"],
+            #"min_all": min["All"],
             "min_category": min["Cat"],
-            "max_all": max["All"],
+            #"max_all": max["All"],
             "max_category": max["Cat"],
-            "std_all": std["All"],
-            "std_category": std["Cat"]
+            #"std_all": std["All"],
+            "std_category": std["Cat"],
         }
         return data
 
@@ -258,7 +398,7 @@ class Category(object):
 
         return source
 
-    def __create_frequency_table(self, source):
+    def __create_product_frequency_table(self, source):
 
         columns = [
             TableColumn(field="index", title="Product"),
@@ -280,3 +420,16 @@ class Category(object):
 
         dt = DataTable(source=source, columns=columns, header_row=True)
         return dt
+
+    # ========== old code ========== #
+    def __source_data_for_multi_line_plot(self, agg, cat):
+        months = unique_values_from_column(agg, self.monthyear)
+        total_values = agg.groupby([self.monthyear]).sum()[self.price].tolist()
+
+        category_dict = agg[agg[self.category] == cat].set_index(self.monthyear)[self.price].to_dict()
+        category_values = [category_dict[month] if month in category_dict else np.nan for month in months]
+        data = {
+            "xs": [months, months],
+            "ys": [total_values, category_values]
+        }
+        return data
