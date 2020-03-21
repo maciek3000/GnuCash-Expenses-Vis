@@ -4,19 +4,41 @@
     font-size: inherit;
 }
 
-.bk.category_title h1 {
+.bk.title_row {
+    width: 100% !important;
+    /* display: inline-block !important; */
+}
+
+.bk.category_title {
+    width: 100% !important;
+  /*  position: static !important; */
+}
+/*
+.bk.category_title > div {
+    display: block !important;
+    position: static !important;
+}
+*/
+.bk.category_title {
     text-align: left;
     color: #5E85B9;
     font-size: 3em;
+    padding-left: 4px;
+    padding-bottom: 8px;
 }
 
-.bk.row_to_fix {
+.bk.first_row {
     width: 100% !important;
 }
 
-.bk.row_to_fix > div:last-child {
+.bk.first_row > div:last-child {
     left: 50% !important;
 }
+
+.bk.first_row > div:nth-child(2) {
+    left: 25% !important;
+}
+
 /*
 
 #category_view {border: 0px solid black; width: 100%;}

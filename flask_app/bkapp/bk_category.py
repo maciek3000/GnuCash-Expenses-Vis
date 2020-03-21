@@ -31,7 +31,7 @@ class Category(object):
         When initializing the object, appropriate column names of expense DataFrame should be provided.
     """
 
-    category_title = "<h1>{category}</h1>"
+    category_title = "{category}"
 
     category_fraction = "<span>{category_fraction:.2%}</span> of all Expenses!"
     category_products_fraction = "<span>{category_products_fraction:.2%}</span> of all Products!"
@@ -123,12 +123,12 @@ class Category(object):
         self.grid_elem_dict[self.g_dropdown].on_change("value", callback)
 
         output = column(
-             row(self.grid_elem_dict[self.g_category_title]),
+             row(self.grid_elem_dict[self.g_category_title], css_classes=["title_row"]),
              row(
                  column(self.grid_elem_dict[self.g_statistics_table],),
                  column(self.grid_elem_dict[self.g_category_fraction], self.grid_elem_dict[self.g_category_products_fraction],),
                  column(self.grid_elem_dict[self.g_dropdown], self.grid_elem_dict[self.g_line_plot]),
-             css_classes=["row_to_fix"]),
+                 css_classes=["first_row"]),
              row(self.grid_elem_dict[self.g_product_histogram], self.grid_elem_dict[self.g_transactions]),
             sizing_mode="stretch_width"
         )
@@ -142,10 +142,10 @@ class Category(object):
 
         #TODO: rename css classes
 
-        elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"])
-        elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_div"], )#width=350, width_policy="max")
-        elem_dict[self.g_category_fraction] = Div(text="", css_classes=["category_fraction"], ) # width=350, width_policy="max")
-        elem_dict[self.g_category_products_fraction] = Div(text="", css_classes=["category_products_fraction"], ) # width=350, width_policy="max")
+        elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"],)
+        elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_div"], )
+        elem_dict[self.g_category_fraction] = Div(text="", css_classes=["category_fraction"], )
+        elem_dict[self.g_category_products_fraction] = Div(text="", css_classes=["category_products_fraction"], )
 
         source_dict[self.g_line_plot] = self.__create_line_plot_source()
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
