@@ -9,6 +9,14 @@
     color: #5E85B9;
     font-size: 3em;
 }
+
+.bk.row_to_fix {
+    width: 100% !important;
+}
+
+.bk.row_to_fix > div:last-child {
+    left: 50% !important;
+}
 /*
 
 #category_view {border: 0px solid black; width: 100%;}

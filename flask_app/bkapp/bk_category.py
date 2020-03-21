@@ -33,7 +33,10 @@ class Category(object):
 
     category_title = "<h1>{category}</h1>"
 
-    statistics_table_html = """<table>
+    category_fraction = "<span>{category_fraction:.2%}</span> of all Expenses!"
+    category_products_fraction = "<span>{category_products_fraction:.2%}</span> of all Products!"
+
+    statistics_table = """<table>
                     <thead>
                         <tr>
                             <th scope="col"> </th>
@@ -93,6 +96,8 @@ class Category(object):
         self.g_category_title = "Category Title"
         self.g_dropdown = "Dropdown"
         self.g_statistics_table = "Statistics Table"
+        self.g_category_fraction = "Category Fraction"
+        self.g_category_products_fraction = "Category Products Fraction"
         self.g_line_plot = "Line Plot"
         self.g_product_histogram = "Product Histogram"
         self.g_transactions = "Transactions"
@@ -104,9 +109,10 @@ class Category(object):
 
         self.current_df = dataframe
         self.categories = unique_values_from_column(dataframe, self.category)
-        initial_category = self.categories[0]
         self.months = unique_values_from_column(dataframe, self.monthyear)
         self.categories_df = aggregated_dataframe_sum(dataframe, [self.monthyear, self.category])
+
+        initial_category = self.categories[0]
         self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements(initial_category)
         self.update_grid(initial_category)
 
@@ -116,12 +122,16 @@ class Category(object):
 
         self.grid_elem_dict[self.g_dropdown].on_change("value", callback)
 
-        output = grid(column(
+        output = column(
              row(self.grid_elem_dict[self.g_category_title]),
-             row(self.grid_elem_dict[self.g_statistics_table], column(
-                            self.grid_elem_dict[self.g_dropdown], self.grid_elem_dict[self.g_line_plot])),
+             row(
+                 column(self.grid_elem_dict[self.g_statistics_table],),
+                 column(self.grid_elem_dict[self.g_category_fraction], self.grid_elem_dict[self.g_category_products_fraction],),
+                 column(self.grid_elem_dict[self.g_dropdown], self.grid_elem_dict[self.g_line_plot]),
+             css_classes=["row_to_fix"]),
              row(self.grid_elem_dict[self.g_product_histogram], self.grid_elem_dict[self.g_transactions]),
-        ))
+            sizing_mode="stretch_width"
+        )
 
         return output
 
@@ -130,8 +140,12 @@ class Category(object):
         elem_dict = {}
         source_dict = {}
 
-        elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"]) #stretch_width
-        elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_div"])
+        #TODO: rename css classes
+
+        elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"])
+        elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_div"], )#width=350, width_policy="max")
+        elem_dict[self.g_category_fraction] = Div(text="", css_classes=["category_fraction"], ) # width=350, width_policy="max")
+        elem_dict[self.g_category_products_fraction] = Div(text="", css_classes=["category_products_fraction"], ) # width=350, width_policy="max")
 
         source_dict[self.g_line_plot] = self.__create_line_plot_source()
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
@@ -149,8 +163,10 @@ class Category(object):
 
     def update_grid(self, category):
 
-        self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=category)
+        self.__update_category_title(category)
         self.__update_statistics_table(category)
+        self.__update_category_fraction(category)
+        self.__update_category_products_fraction(category)
 
         self.__update_line_plot(category)
         self.__update_product_histogram_table(category)
@@ -225,6 +241,9 @@ class Category(object):
         return dt
 
     # ========== Updating Grid Elements ========== #
+    def __update_category_title(self, category):
+        self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=category)
+
 
     def __update_statistics_table(self, category):
         format_dict = {}
@@ -240,7 +259,23 @@ class Category(object):
         format_dict["count"] = count
         format_dict["curr"] = self.current_df[self.currency].unique()[0] #TODO: implement currency properly
 
-        self.grid_elem_dict[self.g_statistics_table].text = self.statistics_table_html.format(**format_dict)
+        self.grid_elem_dict[self.g_statistics_table].text = self.statistics_table.format(**format_dict)
+
+    def __update_category_fraction(self, category):
+        category_sum = self.categories_df[self.categories_df[self.category] == category][self.price].sum()
+        total_sum = self.categories_df[self.price].sum()
+        category_fraction = category_sum / total_sum
+
+        self.grid_elem_dict[self.g_category_fraction].text = self.category_fraction.format(category_fraction=category_fraction)
+
+    def __update_category_products_fraction(self, category):
+        category_products = self.current_df[self.current_df[self.category] == category].shape[0]
+        all_products = self.current_df.shape[0]
+        category_products_fraction = category_products / all_products
+
+        self.grid_elem_dict[self.g_category_products_fraction].text = self.category_products_fraction.format(
+            category_products_fraction=category_products_fraction
+        )
 
     def __update_line_plot(self, category):
 
