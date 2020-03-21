@@ -50,7 +50,7 @@ class BokehApp(object):
 
     def category_gridplot(self):
 
-        return self.category_creator.new_gridplot(self.current_datasource)
+        return self.category_creator.gridplot(self.current_datasource)
 
     #TODO: category type radio buttons
 
