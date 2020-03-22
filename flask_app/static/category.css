@@ -51,6 +51,18 @@
     color: black;
 }
 
+.bk.bk-input {
+    color: inherit;
+    border: 1px solid #D1DCEB;
+    font-size: 1.5em;
+   /* -webkit-appearance: none; */
+
+}
+
+select > option {
+    background-color: red !important;
+}
+
 /*
 
 #category_view {border: 0px solid black; width: 100%;}

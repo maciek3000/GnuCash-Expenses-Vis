@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, DatetimeTickFormatter, HoverTool, ResetTool
+from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, \
+    BoxSelectTool, BoxZoomTool, PanTool, DatetimeTickFormatter, HoverTool, ResetTool, Circle, CustomJS
 from bokeh.layouts import column, row, grid
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
@@ -88,7 +89,6 @@ class Category(object):
             </div>
         </div>
     """
-
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname):
@@ -201,8 +201,26 @@ class Category(object):
 
     def __create_line_plot(self, cds):
 
-        p = figure(width=360, height=360, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip)
-        p.line(x="x", y="y", source=cds, color="#19529c", line_width=5,)
+        # BoxZoomTool is not added due to the issue with ResetTool; when changing the range via SelectDropdown,
+        # the range is being reset to the 'initial_category' range
+
+        base_color = "#19529c"
+
+        p = figure(width=360, height=360, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip,
+                   toolbar_location=None)
+        p.line(x="x", y="y", source=cds, color=base_color, line_width=5,)
+
+
+        # TODO: write JS Callback to implement selecting part of a plot which will propagate JS events for DataTables below
+        # This might require rethinking of how DataFrames are stored in the Object, how aggregations are calculated, etc.
+
+        # scatter = p.circle(x="x", y="y", source=cds, color=base_color, size=4)
+        #
+        # selected_circle = Circle(fill_alpha=1.0, fill_color=base_color, line_color=base_color)
+        # nonselected_circle = Circle(fill_alpha=0.2, line_a   lpha=0.2, fill_color=base_color, line_color=base_color)
+        #
+        # scatter.selection_glyph = selected_circle
+        # scatter.nonselection_glyph = nonselected_circle
 
         p.axis.minor_tick_line_color = None
         p.axis.major_tick_line_color = None
@@ -211,18 +229,6 @@ class Category(object):
         p.axis.major_label_text_font_size = "13px"
         p.xaxis.major_label_orientation = 0.785 # 45 degrees in radians
 
-        # p.add_tools(HoverTool(tooltips=[
-        #     ("Month", "@x"),
-        #     ("Value", "@y")
-        # ]))
-
-        # for ax in [p.xaxis, p.yaxis]:
-        #     ax.minor_tick_line_color = None
-        #     ax.major_tick_line_color = "#8C8C8C"
-        #     ax.axis_line_color = "#8C8C8C"
-        #     #ax.major_label_text_font_size = 11
-
-        p.toolbar.autohide = True
         return p
 
     def __create_product_histogram_source(self):
@@ -277,7 +283,6 @@ class Category(object):
     def __update_category_title(self, category):
         self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=category)
 
-
     def __update_statistics_table(self, category):
         format_dict = {}
 
@@ -313,10 +318,9 @@ class Category(object):
     def __update_line_plot(self, category):
 
         values = self.__values_from_category(category)
+        self.grid_source_dict[self.g_line_plot].data["y"] = values
         self.grid_elem_dict[self.g_line_plot].y_range.start = 0
         self.grid_elem_dict[self.g_line_plot].y_range.end = np.nanmax(values) + (0.01 * np.nanmax(values))
-        self.grid_source_dict[self.g_line_plot].data["y"] = values
-
 
     def __update_product_histogram_table(self, category):
 
@@ -328,7 +332,6 @@ class Category(object):
         new_df = self.current_df[self.current_df[self.category] == category]
         new_df = new_df.fillna("-")
         self.grid_source_dict[self.g_transactions].data = new_df
-
 
     def __values_from_category(self, category):
 
