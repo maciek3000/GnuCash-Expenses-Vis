@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
-from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter
+from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, DatetimeTickFormatter, HoverTool, ResetTool
 from bokeh.layouts import column, row, grid
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
@@ -74,7 +75,19 @@ class Category(object):
                         </tr>
                     </tbody>
                 </table>"""
-                #TODO: add number of items bought
+
+    line_plot_tooltip = """
+        <div class="line_tooltip">
+            <div>
+                <span>Month: </span>
+                <span>@x</span>
+            </div>
+            <div>
+                <span>Value: </span>
+                <span>@y{0.00}</y>
+            </div>
+        </div>
+    """
 
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
@@ -177,10 +190,10 @@ class Category(object):
     def __create_line_plot_source(self):
 
         temp_values = [1 for month in self.months]
-
+        formatted_months = [datetime.strftime(datetime.strptime(month, "%m-%Y"), "%b-%y") for month in self.months]
         source = ColumnDataSource(
             data={
-                "x": self.months,
+                "x": formatted_months,
                 "y": temp_values
             }
         )
@@ -188,9 +201,28 @@ class Category(object):
 
     def __create_line_plot(self, cds):
 
-        p = figure(width=360, height=360, x_range=cds.data["x"], y_range=[0, 10])
-        p.line(x="x", y="y", source=cds, color="blue", line_width=4)
+        p = figure(width=360, height=360, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip)
+        p.line(x="x", y="y", source=cds, color="#19529c", line_width=5,)
 
+        p.axis.minor_tick_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.axis_line_color = "#DCDCDC"
+        p.axis.major_label_text_color = "#C5C5C5"
+        p.axis.major_label_text_font_size = "13px"
+        p.xaxis.major_label_orientation = 0.785 # 45 degrees in radians
+
+        # p.add_tools(HoverTool(tooltips=[
+        #     ("Month", "@x"),
+        #     ("Value", "@y")
+        # ]))
+
+        # for ax in [p.xaxis, p.yaxis]:
+        #     ax.minor_tick_line_color = None
+        #     ax.major_tick_line_color = "#8C8C8C"
+        #     ax.axis_line_color = "#8C8C8C"
+        #     #ax.major_label_text_font_size = 11
+
+        p.toolbar.autohide = True
         return p
 
     def __create_product_histogram_source(self):
@@ -241,6 +273,7 @@ class Category(object):
         return dt
 
     # ========== Updating Grid Elements ========== #
+
     def __update_category_title(self, category):
         self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=category)
 
@@ -254,7 +287,7 @@ class Category(object):
 
         describe_dict = new_category_df.describe()[self.price].to_dict()
         format_dict.update(describe_dict)
-        format_dict["median"] = format_dict["50%"] # % signs are unsupported as keyword arguments
+        format_dict["median"] = format_dict["50%"] # percentage signs are unsupported as keyword arguments
         format_dict["last"] = last
         format_dict["count"] = count
         format_dict["curr"] = self.current_df[self.currency].unique()[0] #TODO: implement currency properly
@@ -280,8 +313,10 @@ class Category(object):
     def __update_line_plot(self, category):
 
         values = self.__values_from_category(category)
-        self.grid_elem_dict[self.g_line_plot].y_range.end = np.nanmax(values)
+        self.grid_elem_dict[self.g_line_plot].y_range.start = 0
+        self.grid_elem_dict[self.g_line_plot].y_range.end = np.nanmax(values) + (0.01 * np.nanmax(values))
         self.grid_source_dict[self.g_line_plot].data["y"] = values
+
 
     def __update_product_histogram_table(self, category):
 

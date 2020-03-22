@@ -1,5 +1,14 @@
 /* base color: #19529c */
 
+:root {
+    --base-color: #19529c;
+    --normal-text-color: #8C8C8C;
+    --normal-link-color: #8CA8CD;
+    --hover-link-color: white;
+    --background-link-color: #5E85B9;
+    --settings-link-color: #c6d4e6;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -13,7 +22,7 @@ html {
 .main {
     max-width: 1280px;
     margin: 0 auto;
-    color: #8C8C8C;
+    color: var(--normal-text-color);
     background: white;
     border: 2px solid #D1DCEB;
     box-shadow: -4px 4px 2px #E8EDF5;
@@ -29,7 +38,7 @@ html {
     justify-content: flex-end;
     border-style: solid;
     border-width: 0px 0px 2px 0px;
-    border-color: #5E85B9;
+    border-color: var(--background-link-color);
     font-size: 1.5em;
     padding: 0px 5px;
     background: #FCFCFC;
@@ -46,35 +55,35 @@ html {
 }
 
 .menu div:not(:first-child):hover {
-    background: #5E85B9;
+    background: var(--background-link-color);
     border-radius: 6px;
 }
 
 .menu a {
-    color: #8CA8CD;
+    color: var(--normal-link-color);
     text-decoration: none;
     padding: 4px 4px;
 }
 
 .menu a:visited {
-    color: #8CA8CD;
+    color: var(--normal-link-color);
     text-decoration: none;
 }
 
 .menu a:hover {
-    color: white;
+    color: var(--hover-link-color);
 }
 
 .menu #settings {
-    color: #c6d4e6;
+    color: var(--settings-link-color);
 }
 
 .menu #settings:visited {
-    color: #c6d4e6;
+    color: var(--settings-link-color);
 }
 
 .menu #settings:hover {
-    color: #5E85B9;
+    color: var(--background-link-color);
 }
 
 /* content */
