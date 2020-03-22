@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, \
-    BoxSelectTool, BoxZoomTool, PanTool, DatetimeTickFormatter, HoverTool, ResetTool, Circle, CustomJS
-from bokeh.layouts import column, row, grid
+from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, Circle
+from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
 
@@ -35,14 +34,17 @@ class Category(object):
 
     category_title = "{category}"
 
-    category_fraction = "<span>{category_fraction:.2%}</span> of all Expenses!"
-    category_products_fraction = "<span>{category_products_fraction:.2%}</span> of all Products!"
+    total_from_category = "<span>{total_from_category:.2f}</span> - total Money spent"
+    category_fraction = "It makes <span>{category_fraction:.2%}</span> of all Expenses"
+    total_products_from_category = "<span>{total_products_from_category:.0f}</span> - number of Products bought"
+    category_products_fraction = "This is <span>{category_products_fraction:.2%}</span> of all Products"
 
     statistics_table = """<table>
+                    <caption>Details</caption>
                     <thead>
                         <tr>
-                            <th scope="col"> </th>
-                            <th scope="col">[{curr}]</th>
+                            <th scope="col"></th>
+                            <th scope="col"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,22 +61,24 @@ class Category(object):
                             <td>{median:.2f}</td>
                         </tr>
                         <tr>
-                            <th scope="row">Min</th>
+                            <th scope="row">Minimum</th>
                             <td>{min:.2f}</td>
                         </tr>
                         <tr>
-                            <th scope="row">Max</th>
+                            <th scope="row">Maximum</th>
                             <td>{max:.2f}</td>
                         </tr>
                         <tr>
                             <th scope="row">Standard Deviation</th>
                             <td>{std:.2f}</td>
                         </tr>
-                        <tr>
-                            <th scope="row">Products bought</th>
-                            <td>{count}</td>
-                        </tr>
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <th scope="row"></th>
+                            <td>[{curr}]</td>
+                        </tr>
+                    </tfoot>
                 </table>"""
 
     line_plot_tooltip = """
@@ -100,11 +104,11 @@ class Category(object):
         self.currency = currency_colname
         self.shop = shop_colname
 
-        self.original_df = None # original dataframe passed to the gridplot function
-        self.selected_months_df = None # dataframe that is filtered via BoxSelectTool
-        self.grouped_categories_df = None # dataframe grouped by month and category
-        self.selected_months_grouped_categories_df = None # dataframe grouped by month and category and filtered to
-                                                          # selected months
+        self.original_df = None  # original dataframe passed to the gridplot function
+        self.selected_months_df = None  # dataframe that is filtered via BoxSelectTool
+        self.grouped_categories_df = None  # dataframe grouped by month and category
+        self.selected_months_grouped_categories_df = None  # dataframe grouped by month and category and filtered to
+        # selected months
 
         self.categories = None
         self.months = None
@@ -113,7 +117,9 @@ class Category(object):
         self.g_category_title = "Category Title"
         self.g_dropdown = "Dropdown"
         self.g_statistics_table = "Statistics Table"
+        self.g_total_from_category = "Total Category"
         self.g_category_fraction = "Category Fraction"
+        self.g_total_products_from_category = "Total Products From Category"
         self.g_category_products_fraction = "Category Products Fraction"
         self.g_line_plot = "Line Plot"
         self.g_product_histogram = "Product Histogram"
@@ -149,15 +155,24 @@ class Category(object):
 
         self.grid_source_dict[self.g_line_plot].selected.on_change("indices", selection_callback)
 
-
         output = column(
-             row(self.grid_elem_dict[self.g_category_title], css_classes=["title_row"]),
-             row(
-                 column(self.grid_elem_dict[self.g_statistics_table],),
-                 column(self.grid_elem_dict[self.g_category_fraction], self.grid_elem_dict[self.g_category_products_fraction],),
-                 column(self.grid_elem_dict[self.g_dropdown], self.grid_elem_dict[self.g_line_plot]),
-                 css_classes=["first_row"]),
-             row(self.grid_elem_dict[self.g_product_histogram], self.grid_elem_dict[self.g_transactions]),
+            row(self.grid_elem_dict[self.g_category_title], css_classes=["first_row"]),
+            row(
+                column(
+                    self.grid_elem_dict[self.g_total_from_category],
+                    self.grid_elem_dict[self.g_category_fraction],
+                    self.grid_elem_dict[self.g_total_products_from_category],
+                    self.grid_elem_dict[self.g_category_products_fraction],
+                    css_classes=["headline_column"]),
+                column(self.grid_elem_dict[self.g_statistics_table]),
+                column(
+                    self.grid_elem_dict[self.g_dropdown],
+                    self.grid_elem_dict[self.g_line_plot]),
+                css_classes=["second_row"]),
+            row(
+                self.grid_elem_dict[self.g_product_histogram],
+                self.grid_elem_dict[self.g_transactions],
+                css_classes=["third_row"]),
             sizing_mode="stretch_width"
         )
 
@@ -168,24 +183,27 @@ class Category(object):
         elem_dict = {}
         source_dict = {}
 
-        #TODO: rename css classes
+        elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"], )
+        elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_table"], )
 
-        elem_dict[self.g_category_title] = Div(text="", css_classes=["category_title"],)
-        elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_div"], )
-        elem_dict[self.g_category_fraction] = Div(text="", css_classes=["category_fraction"], )
-        elem_dict[self.g_category_products_fraction] = Div(text="", css_classes=["category_products_fraction"], )
+        headline_class = "info_headline"
+        elem_dict[self.g_total_from_category] = Div(text="", css_classes=[headline_class])
+        elem_dict[self.g_category_fraction] = Div(text="", css_classes=[headline_class])
+        elem_dict[self.g_total_products_from_category] = Div(text="", css_classes=[headline_class])
+        elem_dict[self.g_category_products_fraction] = Div(text="", css_classes=[headline_class])
 
         source_dict[self.g_line_plot] = self.__create_line_plot_source()
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
 
         source_dict[self.g_product_histogram] = self.__create_product_histogram_source()
-        elem_dict[self.g_product_histogram] = self.__create_product_histogram_table(source_dict[self.g_product_histogram])
+        elem_dict[self.g_product_histogram] = self.__create_product_histogram_table(
+            source_dict[self.g_product_histogram])
 
         source_dict[self.g_transactions] = self.__create_transactions_source()
         elem_dict[self.g_transactions] = self.__create_transactions_table(source_dict[self.g_transactions])
 
         elem_dict[self.g_dropdown] = Select(value=initial_category, options=self.categories,
-                          css_classes=["category_dropdown"])
+                                            css_classes=["category_dropdown"])
 
         return elem_dict, source_dict
 
@@ -195,7 +213,9 @@ class Category(object):
 
         self.__update_category_title(category)
         self.__update_statistics_table(category)
+        self.__update_total_from_category(category)
         self.__update_category_fraction(category)
+        self.__update_total_products_from_category(category)
         self.__update_category_products_fraction(category)
 
         self.__update_line_plot(category)
@@ -215,7 +235,6 @@ class Category(object):
         self.__update_statistics_table(self.chosen_category)
         self.__update_transactions_table(self.chosen_category)
         self.__update_product_histogram_table(self.chosen_category)
-
 
     # ========== Creation of Grid Elements ========== #
 
@@ -240,7 +259,7 @@ class Category(object):
 
         p = figure(width=360, height=360, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip,
                    toolbar_location="right", tools=['box_select'])
-        p.line(x="x", y="y", source=cds, color=base_color, line_width=5,)
+        p.line(x="x", y="y", source=cds, color=base_color, line_width=5, )
 
         scatter = p.circle(x="x", y="y", source=cds, color=base_color, size=4)
 
@@ -255,7 +274,7 @@ class Category(object):
         p.axis.axis_line_color = "#DCDCDC"
         p.axis.major_label_text_color = "#C5C5C5"
         p.axis.major_label_text_font_size = "13px"
-        p.xaxis.major_label_orientation = 0.785 # 45 degrees in radians
+        p.xaxis.major_label_orientation = 0.785  # 45 degrees in radians
 
         return p
 
@@ -320,19 +339,35 @@ class Category(object):
 
         describe_dict = new_category_df.describe()[self.price].to_dict()
         format_dict.update(describe_dict)
-        format_dict["median"] = format_dict["50%"] # percentage signs are unsupported as keyword arguments
+        format_dict["median"] = format_dict["50%"]  # percentage signs are unsupported as keyword arguments
         format_dict["last"] = last
         format_dict["count"] = count
-        format_dict["curr"] = self.original_df[self.currency].unique()[0] #TODO: implement currency properly
+        format_dict["curr"] = self.original_df[self.currency].unique()[0]  # TODO: implement currency properly
 
         self.grid_elem_dict[self.g_statistics_table].text = self.statistics_table.format(**format_dict)
 
+    def __update_total_from_category(self, category):
+        total_from_category = self.grouped_categories_df[self.grouped_categories_df[self.category] == category][
+            self.price].sum()
+
+        self.grid_elem_dict[self.g_total_from_category].text = self.total_from_category.format(
+            total_from_category=total_from_category)
+
     def __update_category_fraction(self, category):
-        category_sum = self.grouped_categories_df[self.grouped_categories_df[self.category] == category][self.price].sum()
+        category_sum = self.grouped_categories_df[self.grouped_categories_df[self.category] == category][
+            self.price].sum()
         total_sum = self.grouped_categories_df[self.price].sum()
         category_fraction = category_sum / total_sum
 
-        self.grid_elem_dict[self.g_category_fraction].text = self.category_fraction.format(category_fraction=category_fraction)
+        self.grid_elem_dict[self.g_category_fraction].text = self.category_fraction.format(
+            category_fraction=category_fraction)
+
+    def __update_total_products_from_category(self, category):
+        total_products_from_category = self.original_df[self.original_df[self.category] == category].shape[0]
+
+        self.grid_elem_dict[self.g_total_products_from_category].text = self.total_products_from_category.format(
+            total_products_from_category=total_products_from_category
+        )
 
     def __update_category_products_fraction(self, category):
         category_products = self.original_df[self.original_df[self.category] == category].shape[0]
@@ -366,7 +401,7 @@ class Category(object):
     def __values_from_category(self, category):
 
         category_dict = self.grouped_categories_df[self.grouped_categories_df[self.category] == category].set_index(
-                        self.monthyear)[self.price].to_dict()
+            self.monthyear)[self.price].to_dict()
         values = [category_dict[month] if month in category_dict else np.nan for month in self.months]
 
         return values
