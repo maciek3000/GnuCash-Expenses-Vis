@@ -16,15 +16,6 @@ def unique_values_from_column(df, column):
     return sorted(df[column].replace({np.nan: "nan"}).unique().tolist())
 
 
-def aggregated_dataframe_sum(df, columns):
-    """Returns new DataFrame from a df, aggregated by column names provided in columns.
-
-        Indexes are reset and values are sorted by the columns that were provided in list_of_cols.
-    """
-    agg = df.groupby(columns).sum().reset_index().sort_values(by=columns)
-    return agg
-
-
 class Category(object):
     """Category Object that provides wrapping and methods to generate gridplot used in Category View in flask_app.
 
@@ -145,11 +136,7 @@ class Category(object):
         self.months = unique_values_from_column(dataframe, self.monthyear)
         self.chosen_months = self.months
 
-
-        # self.grouped_categories_df = self.__create_grouped_categories_df(dataframe)
-
         self.__update_chosen_category(self.categories[0])
-
         self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements()
         self.update_grid_on_category_change()
 
@@ -240,18 +227,15 @@ class Category(object):
     def update_grid_on_month_selection_change(self, new_indices):
 
         self.__update_chosen_months(new_indices)
-
         self.__update_chosen_months_and_category_dataframe()
 
-        #self.__update_statistics_table()
         self.__update_transactions_table()
         self.__update_product_histogram_table()
 
     # ========== Creation of Grid Elements ========== #
 
     def __create_line_plot_source(self):
-
-        temp_values = [1 for month in self.months]
+        temp_values = [1] * len(self.months)  # [1 for month in self.months]
         formatted_months = [datetime.strftime(datetime.strptime(month, "%m-%Y"), "%b-%y") for month in self.months]
         source = ColumnDataSource(
             data={
@@ -353,7 +337,7 @@ class Category(object):
     def __update_chosen_months_and_category_dataframe(self):
         all_months_df = self.original_df[
             self.original_df[self.category].str.contains(self.chosen_category)]
-        self.chosen_months_and_category_df = all_months_df.where(all_months_df[self.monthyear].isin(self.chosen_months))
+        self.chosen_months_and_category_df = all_months_df[all_months_df[self.monthyear].isin(self.chosen_months)]
 
     def __update_category_title(self):
         self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=self.chosen_category)
@@ -416,23 +400,9 @@ class Category(object):
 
     def __update_product_histogram_table(self):
 
-        product_counts = pd.DataFrame(self.chosen_months_and_category_df[self.product].value_counts())
+        product_counts = pd.DataFrame(self.chosen_months_and_category_df[self.product].value_counts(dropna=True))
         self.grid_source_dict[self.g_product_histogram].data = product_counts
 
     def __update_transactions_table(self):
         df = self.chosen_months_and_category_df.fillna("-")
         self.grid_source_dict[self.g_transactions].data = df
-
-    # ========== Miscellaneous ========== #
-
-    # def __values_from_category(self, category):
-    #
-    #     category_dict = self.grouped_categories_df[self.grouped_categories_df[self.category] == category].set_index(
-    #         self.monthyear)[self.price].to_dict()
-    #     values = [category_dict[month] if month in category_dict else np.nan for month in self.months]
-    #
-    #     return values
-    #
-    # def __create_grouped_categories_df(self, dataframe):
-    #     df = aggregated_dataframe_sum(dataframe, [self.monthyear])
-    #     return df
