@@ -96,6 +96,7 @@ class Category(object):
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname):
+
         self.category = category_colname
         self.monthyear = monthyear_colname
         self.price = price_colname
@@ -105,8 +106,8 @@ class Category(object):
         self.shop = shop_colname
 
         self.original_df = None  # original dataframe passed to the gridplot function
-        self.current_category_df = None
-        self.selected_months_and_category_df = None
+        self.chosen_category_df = None
+        self.chosen_months_and_category_df = None
 
         # self.selected_months_df = None  # dataframe that is filtered via BoxSelectTool
 
@@ -136,23 +137,25 @@ class Category(object):
     def gridplot(self, dataframe):
 
         self.original_df = dataframe
-        self.current_category_df = dataframe
-        self.selected_months_and_category_df = dataframe
+        self.chosen_category_df = dataframe
+        self.chosen_months_and_category_df = dataframe
 
         # TODO: categories will be extracted depending on settings
         self.categories = unique_values_from_column(dataframe, self.category)
         self.months = unique_values_from_column(dataframe, self.monthyear)
+        self.chosen_months = self.months
 
 
         # self.grouped_categories_df = self.__create_grouped_categories_df(dataframe)
 
-        self.chosen_category = self.categories[0]
-        self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements(initial_category)
-        self.update_grid_on_category_change(initial_category)
+        self.__update_chosen_category(self.categories[0])
+
+        self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements()
+        self.update_grid_on_category_change()
 
         def dropdown_callback(attr, old, new):
             if new != old:
-                self.chosen_category = new
+                self.__update_chosen_category(new)
                 self.update_grid_on_category_change()
 
         self.grid_elem_dict[self.g_dropdown].on_change("value", dropdown_callback)
@@ -162,7 +165,7 @@ class Category(object):
             old_indices = set(old)
 
             if new_indices != old_indices:
-                self.update_grid_on_selection_change(new_indices)
+                self.update_grid_on_month_selection_change(new_indices)
 
         self.grid_source_dict[self.g_line_plot].selected.on_change("indices", selection_callback)
 
@@ -189,7 +192,7 @@ class Category(object):
 
         return output
 
-    def initialize_grid_elements(self, initial_category):
+    def initialize_grid_elements(self):
 
         elem_dict = {}
         source_dict = {}
@@ -220,7 +223,8 @@ class Category(object):
 
     def update_grid_on_category_change(self):
 
-        self.__update_dataframes()
+        self.__update_chosen_category_dataframe()
+        self.__update_chosen_months_and_category_dataframe()
 
         self.__update_category_title()
         self.__update_statistics_table()
@@ -233,19 +237,15 @@ class Category(object):
         self.__update_product_histogram_table()
         self.__update_transactions_table()
 
-    def update_grid_on_selection_change(self, new_indices):
+    def update_grid_on_month_selection_change(self, new_indices):
 
-        if len(new_indices) == 0:
-            self.selected_months_df = self.original_df
-            self.selected_months_grouped_categories_df = self.grouped_categories_df
-        else:
-            chosen_months = [self.months[i] for i in new_indices]
-            self.selected_months_df = self.original_df.where(self.original_df[self.monthyear].isin(chosen_months))
-            self.selected_months_grouped_categories_df = self.__create_grouped_categories_df(self.selected_months_df)
+        self.__update_chosen_months(new_indices)
 
-        self.__update_statistics_table(self.chosen_category)
-        self.__update_transactions_table(self.chosen_category)
-        self.__update_product_histogram_table(self.chosen_category)
+        self.__update_chosen_months_and_category_dataframe()
+
+        #self.__update_statistics_table()
+        self.__update_transactions_table()
+        self.__update_product_histogram_table()
 
     # ========== Creation of Grid Elements ========== #
 
@@ -264,7 +264,7 @@ class Category(object):
     def __create_line_plot(self, cds):
 
         # BoxZoom Tool is not added due to the issue with ResetTool; when changing the range via SelectDropdown,
-        # the range is being reset to the 'initial_category' range
+        # the range is being reset to the initialization category range
 
         base_color = "#19529c"
 
@@ -338,17 +338,35 @@ class Category(object):
 
     # ========== Updating Grid Elements ========== #
 
-    def __update_category_title(self, category):
-        self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=category)
+    def __update_chosen_category(self, category):
+        self.chosen_category = category
 
-    def __update_statistics_table(self, category):
+    def __update_chosen_months(self, indices):
+        if len(indices) == 0:
+            self.chosen_months = self.months
+        else:
+            self.chosen_months = [self.months[i] for i in indices]
+
+    def __update_chosen_category_dataframe(self):
+        self.chosen_category_df = self.original_df[self.original_df[self.category].str.contains(self.chosen_category)]
+
+    def __update_chosen_months_and_category_dataframe(self):
+        all_months_df = self.original_df[
+            self.original_df[self.category].str.contains(self.chosen_category)]
+        self.chosen_months_and_category_df = all_months_df.where(all_months_df[self.monthyear].isin(self.chosen_months))
+
+    def __update_category_title(self):
+        self.grid_elem_dict[self.g_category_title].text = self.category_title.format(category=self.chosen_category)
+
+    def __update_statistics_table(self):
         format_dict = {}
 
-        new_category_df = self.grouped_categories_df[self.grouped_categories_df[self.category] == category]
-        last = new_category_df[self.price].iloc[-1]
-        count = self.original_df[self.original_df[self.category] == category].shape[0]
+        category_df = self.chosen_category_df.groupby(self.monthyear).sum()
 
-        describe_dict = new_category_df.describe()[self.price].to_dict()
+        last = category_df[self.price].iloc[-1]
+        count = self.chosen_category_df.shape[0]
+
+        describe_dict = category_df.describe()[self.price].to_dict()
         format_dict.update(describe_dict)
         format_dict["median"] = format_dict["50%"]  # percentage signs are unsupported as keyword arguments
         format_dict["last"] = last
@@ -357,31 +375,29 @@ class Category(object):
 
         self.grid_elem_dict[self.g_statistics_table].text = self.statistics_table.format(**format_dict)
 
-    def __update_total_from_category(self, category):
-        total_from_category = self.grouped_categories_df[self.grouped_categories_df[self.category] == category][
-            self.price].sum()
+    def __update_total_from_category(self):
+        total_from_category = self.chosen_category_df.groupby([self.monthyear]).sum()[self.price].sum()
 
         self.grid_elem_dict[self.g_total_from_category].text = self.total_from_category.format(
             total_from_category=total_from_category)
 
-    def __update_category_fraction(self, category):
-        category_sum = self.grouped_categories_df[self.grouped_categories_df[self.category] == category][
-            self.price].sum()
-        total_sum = self.grouped_categories_df[self.price].sum()
+    def __update_category_fraction(self):
+        category_sum = self.chosen_category_df.groupby([self.monthyear]).sum()[self.price].sum()
+        total_sum = self.original_df[self.price].sum()
         category_fraction = category_sum / total_sum
 
         self.grid_elem_dict[self.g_category_fraction].text = self.category_fraction.format(
             category_fraction=category_fraction)
 
-    def __update_total_products_from_category(self, category):
-        total_products_from_category = self.original_df[self.original_df[self.category] == category].shape[0]
+    def __update_total_products_from_category(self):
+        total_products_from_category = self.chosen_category_df.shape[0]
 
         self.grid_elem_dict[self.g_total_products_from_category].text = self.total_products_from_category.format(
             total_products_from_category=total_products_from_category
         )
 
-    def __update_category_products_fraction(self, category):
-        category_products = self.original_df[self.original_df[self.category] == category].shape[0]
+    def __update_category_products_fraction(self):
+        category_products = self.chosen_category_df.shape[0]
         all_products = self.original_df.shape[0]
         category_products_fraction = category_products / all_products
 
@@ -389,34 +405,34 @@ class Category(object):
             category_products_fraction=category_products_fraction
         )
 
-    def __update_line_plot(self, category):
+    def __update_line_plot(self):
 
-        values = self.__values_from_category(category)
+        category_dict = self.chosen_category_df.groupby([self.monthyear]).sum()[self.price].to_dict()
+        values = [category_dict[month] if month in category_dict else np.nan for month in self.months]
+
         self.grid_source_dict[self.g_line_plot].data["y"] = values
         self.grid_elem_dict[self.g_line_plot].y_range.start = 0
         self.grid_elem_dict[self.g_line_plot].y_range.end = np.nanmax(values) + (0.01 * np.nanmax(values))
 
-    def __update_product_histogram_table(self, category):
+    def __update_product_histogram_table(self):
 
-        filtered_df = self.selected_months_df[self.selected_months_df[self.category] == category]
-        product_counts = pd.DataFrame(filtered_df[self.product].value_counts())
+        product_counts = pd.DataFrame(self.chosen_months_and_category_df[self.product].value_counts())
         self.grid_source_dict[self.g_product_histogram].data = product_counts
 
-    def __update_transactions_table(self, category):
-        new_df = self.selected_months_df[self.selected_months_df[self.category] == category]
-        new_df = new_df.fillna("-")
-        self.grid_source_dict[self.g_transactions].data = new_df
+    def __update_transactions_table(self):
+        df = self.chosen_months_and_category_df.fillna("-")
+        self.grid_source_dict[self.g_transactions].data = df
 
     # ========== Miscellaneous ========== #
 
-    def __values_from_category(self, category):
-
-        category_dict = self.grouped_categories_df[self.grouped_categories_df[self.category] == category].set_index(
-            self.monthyear)[self.price].to_dict()
-        values = [category_dict[month] if month in category_dict else np.nan for month in self.months]
-
-        return values
-
-    def __create_grouped_categories_df(self, dataframe):
-        df = aggregated_dataframe_sum(dataframe, [self.monthyear])
-        return df
+    # def __values_from_category(self, category):
+    #
+    #     category_dict = self.grouped_categories_df[self.grouped_categories_df[self.category] == category].set_index(
+    #         self.monthyear)[self.price].to_dict()
+    #     values = [category_dict[month] if month in category_dict else np.nan for month in self.months]
+    #
+    #     return values
+    #
+    # def __create_grouped_categories_df(self, dataframe):
+    #     df = aggregated_dataframe_sum(dataframe, [self.monthyear])
+    #     return df
