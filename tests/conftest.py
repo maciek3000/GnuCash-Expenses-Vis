@@ -170,24 +170,47 @@ def gnucash_db_parser_simple_book(simple_book_path):
 # ========== bk_category ========== #
 
 
+def bk_category_chosen_category():
+    return "Bread"
+
+
+def bk_category_months():
+    months = ["01-2019", "02-2019", "03-2019", "04-2019", "05-2019", "06-2019",
+              "07-2019", "08-2019", "09-2019", "10-2019", "11-2019", "12-2019"]
+    return months
+
+
 @pytest.fixture
-def bk_category():
-    category = Category("Category", "MonthYear", "Price")
+def bk_category(gnucash_db_parser_example_book):
+    columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
+    category = Category(*columns)
+    category.chosen_category = bk_category_chosen_category()
+    category.months = bk_category_months()
+    category.original_df = gnucash_db_parser_example_book.get_df()
     return category
 
 
 @pytest.fixture
-def aggregated_category_df():
-    _ = {
-        "MonthYear": ["01-2019", "01-2019",
-                      "02-2019", "02-2019", "02-2019",
-                      "03-2019", "03-2019"],
-        "Category": ["Cat1", "Cat2",
-                     "Cat1", "Cat2", "Cat3",
-                     "Cat2", "Cat1"],
-        "Price": [6, 9,
-                  6, 17, 17,
-                  52, 13]
-    }
-    df = pd.DataFrame(_)
-    return df
+def bk_category_initialized(bk_category):
+    bk_category.initialize_grid_elements()
+    return bk_category
+
+
+@pytest.fixture
+def bk_category_categories():
+    categories = [
+        "Clothes",
+        "Bread",
+        "Eggs",
+        "Fruits and Vegetables",
+        "Meat",
+        "Chips",
+        "Petrol",
+        "Rent",
+        "Water and Electricity",
+        "Toilet",
+        "Personal - John",
+        "Personal - Susan",
+        "Other"
+    ]
+    return categories

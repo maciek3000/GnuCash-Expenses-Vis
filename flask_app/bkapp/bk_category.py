@@ -100,12 +100,6 @@ class Category(object):
         self.chosen_category_df = None
         self.chosen_months_and_category_df = None
 
-        # self.selected_months_df = None  # dataframe that is filtered via BoxSelectTool
-
-        # self.grouped_categories_df = None  # dataframe grouped by month and category
-        # self.selected_months_grouped_categories_df = None  # dataframe grouped by month and category and filtered to
-        # selected months
-
         self.categories = None
         self.months = None
         self.chosen_category = None
@@ -137,7 +131,7 @@ class Category(object):
         self.chosen_months = self.months
 
         self.__update_chosen_category(self.categories[0])
-        self.grid_elem_dict, self.grid_source_dict = self.initialize_grid_elements()
+        self.initialize_grid_elements()
         self.update_grid_on_category_change()
 
         def dropdown_callback(attr, old, new):
@@ -206,7 +200,8 @@ class Category(object):
         elem_dict[self.g_dropdown] = Select(value=self.chosen_category, options=self.categories,
                                             css_classes=["category_dropdown"])
 
-        return elem_dict, source_dict
+        self.grid_elem_dict = elem_dict
+        self.grid_source_dict = source_dict
 
     def update_grid_on_category_change(self):
 
@@ -346,8 +341,10 @@ class Category(object):
         format_dict = {}
 
         category_df = self.chosen_category_df.groupby(self.monthyear).sum()
-
-        last = category_df[self.price].iloc[-1]
+        if self.months[-1] in category_df.index:
+            last = category_df[self.price].iloc[-1]
+        else:
+            last = np.nan
         count = self.chosen_category_df.shape[0]
 
         describe_dict = category_df.describe()[self.price].to_dict()
