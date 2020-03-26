@@ -171,10 +171,14 @@ def gnucash_db_parser_simple_book(simple_book_path):
 
 
 def bk_category_chosen_category():
+    """Returns chosen category for creating bk_category object."""
+
     return "Bread"
 
 
 def bk_category_months():
+    """Returns list of ALL months used in creation of bk_category object."""
+
     months = ["01-2019", "02-2019", "03-2019", "04-2019", "05-2019", "06-2019",
               "07-2019", "08-2019", "09-2019", "10-2019", "11-2019", "12-2019"]
     return months
@@ -182,6 +186,14 @@ def bk_category_months():
 
 @pytest.fixture
 def bk_category(gnucash_db_parser_example_book):
+    """Returns initialized bk_category Object.
+
+        Set properties are:
+            - chosen category
+            - months (all)
+            - original_df
+    """
+
     columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
     category = Category(*columns)
     category.chosen_category = bk_category_chosen_category()
@@ -192,12 +204,16 @@ def bk_category(gnucash_db_parser_example_book):
 
 @pytest.fixture
 def bk_category_initialized(bk_category):
+    """Returns bk_category object (the same as from bk_category fixture), but with grid elements initialized."""
+
     bk_category.initialize_grid_elements()
     return bk_category
 
 
 @pytest.fixture
 def bk_category_categories():
+    """Returns list of all categories used by some bk_category tests."""
+
     categories = [
         "Clothes",
         "Bread",
