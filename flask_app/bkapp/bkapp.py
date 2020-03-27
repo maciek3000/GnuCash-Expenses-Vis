@@ -5,7 +5,9 @@ from bokeh.models.widgets import CheckboxGroup, Div, Select
 from bokeh.models import ColumnDataSource, CDSView, NumeralTickFormatter, GroupFilter, DataTable, TableColumn, CustomJS
 from bokeh.plotting import figure
 from bokeh.layouts import column, layout, row
+
 from .bk_category import Category
+from .bk_overview import Overview
 
 
 class BokehApp(object):
@@ -26,8 +28,9 @@ class BokehApp(object):
         self.category = col_mapping["category"]
         self.monthyear = col_mapping["monthyear"]
 
-        self.category_creator = Category(self.category, self.monthyear, self.price, self.product,
-                                         self.date, self.currency, self.shop)
+        self.category = Category(self.category, self.monthyear, self.price, self.product,
+                                 self.date, self.currency, self.shop)
+        self.overview = Overview()
 
     def settings(self, cat_name):
         all_cats = sorted(self.org_datasource[cat_name].unique().tolist())
@@ -50,7 +53,10 @@ class BokehApp(object):
 
     def category_gridplot(self):
 
-        return self.category_creator.gridplot(self.current_datasource)
+        return self.category.gridplot(self.current_datasource)
+
+    def overview_gridplot(self):
+        return self.overview.gridplot()
 
     #TODO: category type radio buttons
 

@@ -1,14 +1,21 @@
 import pandas as pd
 
 
-def test_get_list_of_transactions_example_book(gnucash_db_parser_example_book):
+def test_get_list_of_expense_transactions_example_book(gnucash_db_parser_example_book):
     """Testing returned list of transactions from Example Gnucash file"""
 
-    returned_list = gnucash_db_parser_example_book._get_list_of_transactions(gnucash_db_parser_example_book.file_path)
+    returned_list = gnucash_db_parser_example_book._GnuCashDBParser__get_list_of_transactions(
+        gnucash_db_parser_example_book.expense_name
+    )
     assert len(returned_list) == 2480
 
+def test_get_list_of_income_transactions_example_book(gnucash_db_parser_example_book):
+    returned_list = gnucash_db_parser_example_book._GnuCashDBParser__get_list_of_transactions(
+        gnucash_db_parser_example_book.income_name
+    )
+    assert len(returned_list) == 24
 
-def test_get_list_of_transactions_simple_book(gnucash_db_parser_simple_book):
+def test_get_list_of_expense_transactions_simple_book(gnucash_db_parser_simple_book):
     """Testing returned list of transactions from simple piecash book (created manually)"""
 
     curr = "PLN"
@@ -22,15 +29,32 @@ def test_get_list_of_transactions_simple_book(gnucash_db_parser_simple_book):
         ("Shop #2", "2019-01-11", "Apples #1", "Expenses:Main Type #1:Fruits:Apples", "5", curr)
     ]
 
-    returned_list = gnucash_db_parser_simple_book._get_list_of_transactions(gnucash_db_parser_simple_book.file_path)
+    returned_list = gnucash_db_parser_simple_book._GnuCashDBParser__get_list_of_transactions(
+        gnucash_db_parser_simple_book.expense_name
+    )
     assert len(returned_list) == 7
 
     for expected_tr, returned_tr in zip(expected_transactions, returned_list):
         for exp_elem, ret_elem in zip(expected_tr, returned_tr):
             assert exp_elem == ret_elem
 
+def test_get_list_of_income_transactions_simple_book(gnucash_db_parser_simple_book):
 
-def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
+    curr = "PLN"
+    expected_income_list = [
+        ("Salary", "2019-01-01", "nan", "Income:Income #1", "-1000", curr),
+        ("Salary", "2019-01-01", "nan", "Income:Income #2", "-1500", curr)
+    ]
+    actual_income_list = gnucash_db_parser_simple_book._GnuCashDBParser__get_list_of_transactions(
+        gnucash_db_parser_simple_book.income_name
+    )
+    assert len(actual_income_list) == 2
+
+    for expected_income, actual_income in zip(expected_income_list, actual_income_list):
+        for exp_elem, act_elem in zip(expected_income, actual_income):
+            assert act_elem == exp_elem
+
+def test_create_expense_df_from_simple_book(gnucash_db_parser_simple_book):
     """Testing DataFrame returned by GnucashDBParser from simple piecash book (created manually)"""
 
     d = {
@@ -45,7 +69,7 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
         "MonthYear": ["01-2019"]
     }
 
-    df = gnucash_db_parser_simple_book.get_df()
+    df = gnucash_db_parser_simple_book.get_expenses_df()
     assert len(df.columns) == 9
 
     keys = list(d.keys())
@@ -77,7 +101,7 @@ def test_create_df_from_simple_book(gnucash_db_parser_simple_book):
         assert elem in d['ALL_CATEGORIES']
 
 
-def test_create_df_from_example_book(gnucash_db_parser_example_book):
+def test_create_expense_df_from_example_book(gnucash_db_parser_example_book):
     """Testing DataFrame returned by GnucashDBParser from Example Gnucash file"""
 
     all_categories = set(map(lambda x: "Expenses:Family:" + x, [
@@ -148,7 +172,7 @@ def test_create_df_from_example_book(gnucash_db_parser_example_book):
         "Product": products
     }
 
-    df = gnucash_db_parser_example_book.get_df()
+    df = gnucash_db_parser_example_book.get_expenses_df()
 
     assert len(df) == 2480
 

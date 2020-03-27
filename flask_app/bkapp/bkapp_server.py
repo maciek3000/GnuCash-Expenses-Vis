@@ -16,11 +16,11 @@ class BokehServer(object):
     Flask Views. All of Bokeh Views follow simple pattern of calling BokehApp with appropriate parameters
     (which later could be dynamically obtained, e.g. column names) and then adding roots to the document.
 
-    To add a visualization (view), the function has to defined and then added into self.views dictionary.
+    To add a visualization (view), the function has to be defined and then added into self.views dictionary.
     """
 
     def __init__(self, file_path, port, col_mapping):
-        self.bkapp = BokehApp(GnuCashDBParser(file_path).get_df(), col_mapping)
+        self.bkapp = BokehApp(GnuCashDBParser(file_path).get_expenses_df(), col_mapping)
         self.port = port
         self.views = {
             '/trends': self.trends,

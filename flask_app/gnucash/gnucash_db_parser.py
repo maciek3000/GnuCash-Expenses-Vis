@@ -7,6 +7,7 @@ from datetime import datetime
 class GnuCashDBParser(object):
     """Parser for SQL DB GnuCash Files."""
 
+    income_name = "INCOME"
     expense_name = "EXPENSE"
     default_col_mapping = {
         "name": "Name",
@@ -26,10 +27,11 @@ class GnuCashDBParser(object):
     def __init__(self, file_path, columns_mapping=None):
 
         mapping = columns_mapping if columns_mapping else self.default_col_mapping
-        self.col_map = self.__create_mapping(mapping)
+        self.__create_mapping(mapping)
 
         self.file_path = file_path
         self.expenses_df = None
+        self.income_df = None
 
     def __create_mapping(self, column_mapping):
 
@@ -47,7 +49,17 @@ class GnuCashDBParser(object):
         self.category = c["category"]
         self.monthyear = c["monthyear"]
 
-    def create_df(self, file_path):
+    def get_expenses_df(self):
+        if self.expenses_df is None:
+            self.expenses_df = self.__create_transactions_df(self.expense_name)
+        return self.expenses_df
+
+    def get_income_df(self):
+        if self.income_df is None:
+            self.income_df = self.__create_transactions_df(self.income_name)
+        return self.income_df
+
+    def __create_transactions_df(self, transaction_type):
         # TODO: update desc of columns
         """Creates DataFrame from GnuCash DB file located in file_path.
 
@@ -60,22 +72,22 @@ class GnuCashDBParser(object):
 
         """
 
-        transaction_list = self._get_list_of_transactions(file_path)
+        transaction_list = self.__get_list_of_transactions(transaction_type)
 
         if not len(transaction_list) > 0:
-            raise NotImplementedError("No transactions were fetched!")
+            raise NotImplementedError("No transactions were fetched.")
 
-        return self._create_df_from_list_of_transactions(transaction_list)
+        return self.__create_expenses_df_from_list_of_transactions(transaction_list)
 
-    def _get_list_of_transactions(self, file_path):
+    def __get_list_of_transactions(self, transaction_type):
         """Creates list of transactions from GnuCash DB file parsed with piecash."""
 
-        with piecash.open_book(file_path) as book:
+        with piecash.open_book(self.file_path) as book:
             transaction_list = []
             for tr in book.transactions:
                 split = tr.splits
                 for single_row in split:
-                    if single_row.account.type == self.expense_name:
+                    if single_row.account.type == transaction_type:
                         memo = single_row.memo.strip()
                         memo = memo if len(memo) > 0 else np.nan
 
@@ -85,7 +97,7 @@ class GnuCashDBParser(object):
 
         return transaction_list
 
-    def _create_df_from_list_of_transactions(self, transaction_list):
+    def __create_expenses_df_from_list_of_transactions(self, transaction_list):
 
         column_names = [self.name, self.date, self.split, self.account, self.price, self.currency]
         df = pd.DataFrame(transaction_list, columns=column_names)
@@ -117,8 +129,3 @@ class GnuCashDBParser(object):
         df[self.all] = df[self.all].apply(lambda x: ":".join(x))
 
         return df
-
-    def get_df(self):
-        if self.expenses_df is None:
-            self.expenses_df = self.create_df(self.file_path)
-        return self.expenses_df

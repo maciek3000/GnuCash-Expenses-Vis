@@ -98,6 +98,10 @@ def create_simple_book(currency, file_path):
     apples = piecash.Account("Apples", "EXPENSE", curr, parent=fruits)
     eggs = piecash.Account("Eggs", "EXPENSE", curr, parent=dairy)
 
+    incomes = piecash.Account("Income", "INCOME", curr, parent=book.root_account, placeholder=True)
+    inc1 = piecash.Account("Income #1", "INCOME", curr, parent=incomes)
+    inc2 = piecash.Account("Income #2", "INCOME", curr, parent=incomes)
+
     book.save()
 
     simple_transactions = [
@@ -116,6 +120,24 @@ def create_simple_book(currency, file_path):
             (acc1, apples, "Apples #1", Decimal("5"))
         ))
     ]
+
+    income_transactions = [
+        (date(year=2019, month=1, day=1), inc1, acc1, "Salary", Decimal("1000")),
+        (date(year=2019, month=1, day=1), inc2, acc2, "Salary", Decimal("1500"))
+    ]
+
+    # add 2 income transactions
+    for income_tr in income_transactions:
+        tr = piecash.Transaction(
+            currency=curr,
+            description=income_tr[3],
+            post_date=income_tr[0],
+            splits=[
+                piecash.Split(account=income_tr[1], value=-income_tr[4]),
+                piecash.Split(account=income_tr[2], value=income_tr[4])
+            ]
+        )
+        book.flush()
 
     # add 3 simple transactions
     for simple_tr in simple_transactions:
@@ -198,7 +220,7 @@ def bk_category(gnucash_db_parser_example_book):
     category = Category(*columns)
     category.chosen_category = bk_category_chosen_category()
     category.months = bk_category_months()
-    category.original_df = gnucash_db_parser_example_book.get_df()
+    category.original_df = gnucash_db_parser_example_book.expenses_df()
     return category
 
 
