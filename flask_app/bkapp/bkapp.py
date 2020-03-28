@@ -14,7 +14,7 @@ class BokehApp(object):
 
     category_types = ["Simple", "Extended"]
 
-    def __init__(self, dataframe, col_mapping):
+    def __init__(self, dataframe, col_mapping, server_date):
         self.org_datasource = dataframe
         self.current_datasource = dataframe
 
@@ -30,7 +30,8 @@ class BokehApp(object):
 
         self.category = Category(self.category, self.monthyear, self.price, self.product,
                                  self.date, self.currency, self.shop)
-        self.overview = Overview()
+        self.overview = Overview(self.category, self.monthyear, self.price, self.product,
+                                 self.date, self.currency, self.shop, server_date)
 
     def settings(self, cat_name):
         all_cats = sorted(self.org_datasource[cat_name].unique().tolist())

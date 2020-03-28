@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template
 from bokeh.embed import server_document
-
+from datetime import datetime
 
 def create_app(test_config=None):
     # app factory
@@ -43,7 +43,9 @@ def create_app(test_config=None):
         "monthyear": "MonthYear"
     }
 
-    bkapp_server = BokehServer(bk_file_path_db, bk_port, col_mapping)
+    server_date = datetime.now()
+
+    bkapp_server = BokehServer(bk_file_path_db, bk_port, col_mapping, server_date)
 
     from threading import Thread
     Thread(target=bkapp_server.bkworker).start()

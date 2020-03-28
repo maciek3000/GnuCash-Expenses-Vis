@@ -19,8 +19,8 @@ class BokehServer(object):
     To add a visualization (view), the function has to be defined and then added into self.views dictionary.
     """
 
-    def __init__(self, file_path, port, col_mapping):
-        self.bkapp = BokehApp(GnuCashDBParser(file_path).get_expenses_df(), col_mapping)
+    def __init__(self, file_path, port, col_mapping, server_date):
+        self.bkapp = BokehApp(GnuCashDBParser(file_path).get_expenses_df(), col_mapping, server_date)
         self.port = port
         self.views = {
             '/trends': self.trends,

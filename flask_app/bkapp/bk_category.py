@@ -2,18 +2,12 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
+from .pandas_functions import unique_values_from_column
+
 from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, Circle
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
-
-
-def unique_values_from_column(df, column_name):
-    """Returns sorted and unique values from a column from a DataFrame df.
-
-        If there are any NaN values, they are replaced to string "nan".
-     """
-    return sorted(df[column_name].replace({np.nan: "nan"}).unique().tolist())
 
 
 class Category(object):
