@@ -4,7 +4,6 @@ import tempfile
 import os
 from datetime import date
 from decimal import Decimal
-import pandas as pd
 
 from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
 from flask_app.gnucash.gnucash_db_parser import GnuCashDBParser
@@ -220,7 +219,7 @@ def bk_category(gnucash_db_parser_example_book):
     category = Category(*columns)
     category.chosen_category = bk_category_chosen_category()
     category.months = bk_category_months()
-    category.original_df = gnucash_db_parser_example_book.expenses_df()
+    category.original_df = gnucash_db_parser_example_book.get_expenses_df()
     return category
 
 
