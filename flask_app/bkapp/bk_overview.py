@@ -19,6 +19,7 @@ class Overview(object):
     expenses_last_month = "Total Expenses: {expenses_last_month:.2f}"
     total_products_last_month = "Products Bought: {total_products_last_month}"
     different_shops_last_month = "Unique Shops visited: {different_shops_last_month}"
+    savings = "Your savings"
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname, server_date):
@@ -41,6 +42,8 @@ class Overview(object):
         self.original_income_df = None
         self.last_month_expense_df = None
         self.current_month_expense_df = None
+        self.last_month_income_df = None
+        self.current_month_income_df = None
 
         self.months = None
         self.last_month = None
@@ -62,7 +65,7 @@ class Overview(object):
 
         self.initialize_grid_elements()
 
-        self.__update_current_and_future_months()
+        self.update_gridplot()
 
         # ##################################################### #
         # Month             Saved or over bought        Bar Plot with Categories (comparison to Last Month Budget?)
@@ -121,6 +124,14 @@ class Overview(object):
     def update_gridplot(self, month=None):
 
         self.__update_current_and_future_months(month)
+        self.__update_dataframes()
+
+        self.__update_last_month_title()
+        self.__update_expenses_last_month()
+        self.__update_total_products_last_month()
+        self.__update_different_shops_last_month()
+
+        self.__update_savings_info()
 
 
     # ========== Creation of Grid Elements ========== #
@@ -176,6 +187,8 @@ class Overview(object):
     def __update_current_and_future_months(self, month=None, date_format="%m-%Y"):
         if month is None:
             chosen_month = (pd.Timestamp(self.server_date) - pd.DateOffset(months=1)).strftime(date_format)
+            if chosen_month not in self.months:
+                chosen_month = self.months[-1]
         else:
             chosen_month = month
 
@@ -185,11 +198,33 @@ class Overview(object):
 
     def __update_dataframes(self):
 
-        self.__update_expense_dataframe()
-        self.__update_income_dataframe()
+        self.__update_expense_dataframes()
+        self.__update_income_dataframes()
 
-    def __update_expense_dataframe(self):
-        pass
+    def __update_expense_dataframes(self):
+        self.last_month_expense_df = self.original_expense_df[self.original_expense_df[self.monthyear] == self.last_month]
+        self.current_month_expense_df = self.original_expense_df[self.original_expense_df[self.monthyear] == self.current_month]
 
-    def __update_income_dataframe(self):
-        pass
+    def __update_income_dataframes(self):
+        self.last_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.last_month]
+        self.current_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.current_month]
+
+    def __update_last_month_title(self):
+        last_month = self.last_month
+        self.grid_elem_dict[self.g_last_month].text = self.last_month.format(last_month=last_month)
+
+    def __update_expenses_last_month(self):
+        expenses_last_month = 2000
+        self.grid_elem_dict[self.g_expenses_last_month].text = self.expenses_last_month.format(expenses_last_month=expenses_last_month)
+
+    def __update_total_products_last_month(self):
+        total_products_last_month = 100
+        self.grid_elem_dict[self.g_total_products_last_month].text = self.total_products_last_month.format(total_products_last_month=total_products_last_month)
+
+    def __update_different_shops_last_month(self):
+        different_shops_last_month = 10
+        self.grid_elem_dict[self.g_different_shops_last_month].text = self.different_shops_last_month.format(different_shops_last_month=different_shops_last_month)
+
+    def __update_savings_info(self):
+        self.grid_elem_dict[self.g_savings_info].text = self.savings
+
