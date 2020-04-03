@@ -7,7 +7,7 @@ def create_bp(bkapp_server_address):
 
     @bp.route('/')
     def overview():
-        script = server_document(bkapp_server_address + 'some_data')
+        script = server_document(bkapp_server_address + 'overview')
         return render_template('overview.html', script = script)
 
     return bp

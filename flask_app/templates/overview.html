@@ -5,26 +5,10 @@
 {% block content %}
 
 <div class="title">
-    <h1>Overview of Expenses</h1>
+    <h1>Monthly Overview</h1>
+</div>
+<div class="content-container">
+    {{ script|safe }}
 </div>
 
-<div class="content-container">
-    <div class="text" id="overview_text">
-        <div>
-            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis aliquet varius pharetra.
-                Vivamus id vehicula massa, eu porttitor libero. Aliquam eget varius nulla, et porttitor nisi.
-                Quisque molestie vulputate libero a fringilla. Quisque molestie porta nibh ac imperdiet.
-                Fusce aliquam nec mi id interdum. Ut vulputate consequat dapibus.
-                Donec nec neque aliquam, mollis leo eu, cursus augue. Aenean sagittis laoreet turpis eget sodales.
-                Vivamus in turpis nec tellus maximus feugiat vitae sed mi. Sed blandit mi magna, ut vehicula odio
-                hendrerit ultricies. Donec eu cursus ligula. Quisque vel ipsum ut neque varius mollis ut et nisi.
-                Nam rhoncus sit amet odio ac dignissim. Vivamus sit amet augue metus. Sed eu lacus quis erat
-                fermentum faucibus eget eu quam.
-            </p>
-        </div>
-    </div>
-    <div class="stats" id="overview_stats">
-        {{ script|safe }}
-    </div>
-</div>
 {% endblock %}

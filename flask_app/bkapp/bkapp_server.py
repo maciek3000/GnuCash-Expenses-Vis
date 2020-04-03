@@ -20,12 +20,14 @@ class BokehServer(object):
     """
 
     def __init__(self, file_path, port, col_mapping, server_date):
-        self.bkapp = BokehApp(GnuCashDBParser(file_path).get_expenses_df(), col_mapping, server_date)
+        gnucash_parser = GnuCashDBParser(file_path)
+        self.bkapp = BokehApp(gnucash_parser.get_expenses_df(), gnucash_parser.get_income_df(), col_mapping, server_date)
         self.port = port
         self.views = {
             '/trends': self.trends,
             '/category': self.category,
             '/some_data': self.some_data,
+            '/overview': self.overview,
             '/settings': self.settings,
             '/test_table': self.test_table,
         }
@@ -54,6 +56,11 @@ class BokehServer(object):
     def category(self, doc):
 
         fig = self.bkapp.category_gridplot()
+        doc.add_root(fig)
+        doc.theme = self.theme
+
+    def overview(self, doc):
+        fig = self.bkapp.overview_gridplot()
         doc.add_root(fig)
         doc.theme = self.theme
 

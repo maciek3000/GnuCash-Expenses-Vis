@@ -14,9 +14,11 @@ class BokehApp(object):
 
     category_types = ["Simple", "Extended"]
 
-    def __init__(self, dataframe, col_mapping, server_date):
-        self.org_datasource = dataframe
-        self.current_datasource = dataframe
+    def __init__(self, expense_dataframe, income_dataframe, col_mapping, server_date):
+        self.expense_org_datasource = expense_dataframe
+        self.expense_current_datasource = expense_dataframe
+        self.income_org_datasource = income_dataframe
+        self.income_current_datasource = income_dataframe
 
         self.date = col_mapping["date"]
         self.price = col_mapping["price"]
@@ -34,14 +36,14 @@ class BokehApp(object):
                                  self.date, self.currency, self.shop, server_date)
 
     def settings(self, cat_name):
-        all_cats = sorted(self.org_datasource[cat_name].unique().tolist())
-        current_cats = self.current_datasource[cat_name].unique().tolist()
+        all_cats = sorted(self.expense_org_datasource[cat_name].unique().tolist())
+        current_cats = self.expense_current_datasource[cat_name].unique().tolist()
 
         def callback(new):
             chosen_filters = [all_cats[i] for i in new]
-            cond = np.isin(self.org_datasource[cat_name], chosen_filters)
-            self.current_datasource = self.org_datasource[cond]
-            self.current_source = ColumnDataSource(self.current_datasource)
+            cond = np.isin(self.expense_org_datasource[cat_name], chosen_filters)
+            self.expense_current_datasource = self.expense_org_datasource[cond]
+            self.current_source = ColumnDataSource(self.expense_current_datasource)
 
         checkbox_group = CheckboxGroup(
             labels=all_cats,
@@ -54,10 +56,10 @@ class BokehApp(object):
 
     def category_gridplot(self):
 
-        return self.category.gridplot(self.current_datasource)
+        return self.category.gridplot(self.expense_current_datasource)
 
     def overview_gridplot(self):
-        return self.overview.gridplot()
+        return self.overview.gridplot(self.expense_current_datasource, self.income_current_datasource)
 
     #TODO: category type radio buttons
 
@@ -70,7 +72,7 @@ class BokehApp(object):
 
     def trends(self, month_name):
 
-        agg = self.current_datasource.groupby([month_name]).sum().reset_index().sort_values(by=month_name)
+        agg = self.expense_current_datasource.groupby([month_name]).sum().reset_index().sort_values(by=month_name)
         source = ColumnDataSource(agg)
 
         p = figure(width=480, height=480, x_range=agg[month_name])
@@ -92,13 +94,13 @@ class BokehApp(object):
         return p
 
     def old_category(self):
-        unique_categories = self.current_datasource['Category'].unique().tolist()
+        unique_categories = self.expense_current_datasource['Category'].unique().tolist()
         unique_categories.sort()
 
-        months = self.current_datasource['MonthYear'].unique().tolist()
+        months = self.expense_current_datasource['MonthYear'].unique().tolist()
         months.sort()
 
-        df = self.current_datasource[self.current_datasource['Category'] == unique_categories[0]]
+        df = self.expense_current_datasource[self.expense_current_datasource['Category'] == unique_categories[0]]
         agg = df.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
         source = ColumnDataSource(data=agg)
 
@@ -120,7 +122,7 @@ class BokehApp(object):
 
         def callback(attr, old, new):
             if new != old:
-                df = self.current_datasource[self.current_datasource['Category'] == new]
+                df = self.expense_current_datasource[self.expense_current_datasource['Category'] == new]
                 agg = df.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
                 source.data = ColumnDataSource(agg).data
 
@@ -131,7 +133,7 @@ class BokehApp(object):
         return column(dropdown, p)
 
     def some_data(self):
-        agg = self.current_datasource.groupby(['MonthYear']).sum().reset_index()
+        agg = self.expense_current_datasource.groupby(['MonthYear']).sum().reset_index()
 
         val = agg['Price'].mean()
         text = 'Average expenses are: <p style="color:#9c2b19"> {} </p>'.format(val)
@@ -141,7 +143,7 @@ class BokehApp(object):
 
     def test_table(self):
 
-        agg = self.current_datasource.groupby(["MonthYear", "Category"]).sum()
+        agg = self.expense_current_datasource.groupby(["MonthYear", "Category"]).sum()
         month_prices = agg.reset_index().groupby(["MonthYear"]).sum()
         agg = agg.merge(month_prices, how="inner", left_index=True, right_index=True).reset_index().sort_values(by=["MonthYear", "Category"])
         source = ColumnDataSource(agg)
