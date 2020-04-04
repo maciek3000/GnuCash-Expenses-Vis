@@ -123,6 +123,8 @@ class Overview(object):
 
     def update_gridplot(self, month=None):
 
+        month = "02-2019"
+
         self.__update_current_and_future_months(month)
         self.__update_dataframes()
 
@@ -132,6 +134,9 @@ class Overview(object):
         self.__update_different_shops_last_month()
 
         self.__update_savings_info()
+        self.__update_savings_piechart()
+
+        self.__update_category_barplot()
 
 
     # ========== Creation of Grid Elements ========== #
@@ -140,7 +145,7 @@ class Overview(object):
 
         data = {
             "angle": [0.5*pi, 1.5*pi],
-            "color": ["red", "blue"]
+            "color": ["red", "gray"]
         }
 
         source = ColumnDataSource(
@@ -154,9 +159,9 @@ class Overview(object):
         p = figure(plot_height=150, x_range=(-0.5, 1.0))
 
         p.wedge(
-            x=0, y=1, radius=0.4,
+            x=0, y=1, radius=0.2,
             start_angle=cumsum("angle", include_zero=True), end_angle=cumsum("angle"),
-            fill_color="color",
+            fill_color="color", line_color="gray",
             source=source
         )
 
@@ -214,17 +219,43 @@ class Overview(object):
         self.grid_elem_dict[self.g_last_month].text = self.last_month.format(last_month=last_month)
 
     def __update_expenses_last_month(self):
-        expenses_last_month = 2000
+        expenses_last_month = self.last_month_expense_df[self.price].sum()
         self.grid_elem_dict[self.g_expenses_last_month].text = self.expenses_last_month.format(expenses_last_month=expenses_last_month)
 
     def __update_total_products_last_month(self):
-        total_products_last_month = 100
+        total_products_last_month = self.last_month_expense_df.shape[0]
         self.grid_elem_dict[self.g_total_products_last_month].text = self.total_products_last_month.format(total_products_last_month=total_products_last_month)
 
     def __update_different_shops_last_month(self):
-        different_shops_last_month = 10
+        different_shops_last_month = len(unique_values_from_column(self.last_month_expense_df, self.shop))
         self.grid_elem_dict[self.g_different_shops_last_month].text = self.different_shops_last_month.format(different_shops_last_month=different_shops_last_month)
 
     def __update_savings_info(self):
         self.grid_elem_dict[self.g_savings_info].text = self.savings
 
+    def __update_savings_piechart(self):
+
+        income_month = -(self.last_month_income_df[self.price].sum())
+        expense_month = self.last_month_expense_df[self.price].sum()
+
+        print(income_month)
+        print(expense_month)
+
+        difference = income_month - expense_month
+        part = round((difference / income_month), 2)
+
+        if difference >= 0:
+            color = "green"
+        else:
+            part = -part
+            color = "red"
+
+        angles = [(part * 2*pi) + (pi/4), ((1-part)*2*pi) + (pi/4)]
+
+
+        source = self.grid_source_dict[self.g_savings_piechart]
+        source.data["angle"] = angles
+        source.data["color"] = ["gray", color]
+
+    def __update_category_barplot(self):
+        pass
