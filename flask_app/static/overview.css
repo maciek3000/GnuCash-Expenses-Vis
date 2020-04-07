@@ -7,3 +7,49 @@
     --light-gray: #DCDCDC;
 }
 
+.bk.title_row {
+    width: 100% !important;
+    font-size: 3em;
+    color: var(--base-color);
+}
+
+.bk.title_row > div {
+    margin-right: 8px;
+}
+
+.bk.month_title, .bk.month_dropdown {
+    color: inherit !important;
+    font-size: inherit !important;
+    float: left !important;
+    top: 0px !important;
+    height: 100% !important;
+}
+
+.bk.month_dropdown > div {
+    display: block !important;
+}
+
+.bk.month_dropdown {
+    width: auto !important;
+    position: static !important;
+    left: 0px !important;
+}
+
+.bk.month_title {
+    position: static !important;
+}
+
+.bk.bk-input-group {
+    width: auto !important;
+    padding: 0px !important;
+}
+
+.bk.bk-input {
+    color: inherit;
+    border: 0px solid #D1DCEB;
+    font-size: inherit;
+    -webkit-appearance: none;
+    width: auto !important;
+    padding: 0px !important;
+}
+

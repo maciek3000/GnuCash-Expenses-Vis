@@ -99,6 +99,7 @@ class Overview(object):
             row(
                 self.grid_elem_dict[self.g_month_dropdown],
                 self.grid_elem_dict[self.g_month_title],
+                css_classes=["title_row"],
             ),
             row(
                 column(
@@ -176,7 +177,8 @@ class Overview(object):
 
     def __create_savings_piechart(self, source):
 
-        p = figure(plot_height=150, x_range=(-0.5, 0.5))
+        p = figure(plot_height=150, x_range=(-0.5, 0.5),
+                   toolbar_location=None)
 
         wedge_kwargs = {
             "x": 0,
@@ -218,10 +220,18 @@ class Overview(object):
 
     def __create_category_barplot(self, source):
 
-        p = figure(width=480, height=360, x_range=source.data["x"])
-        p.vbar("x", top="top", width=0.9, color=self.color_map["base"], source=source)
+        p = figure(width=480, height=360, x_range=source.data["x"], toolbar_location=None,
+                   title="Category Expenses")
+        p.vbar("x", top="top", width=0.9, color=self.color_map["link_background"], source=source)
 
-        p.xaxis.major_label_orientation = 0.785
+        p.xaxis.major_label_orientation = 0.9
+        p.axis.major_tick_in = None
+        p.axis.minor_tick_in = None
+        p.axis.major_tick_line_color = self.color_map["background_gray"]
+        p.axis.minor_tick_out = None
+        p.axis.axis_line_color = "white"
+        p.axis.major_label_text_font_size = "13px"
+        p.axis.major_label_text_color = "#C5C5C5"
 
         return p
 
@@ -333,8 +343,6 @@ class Overview(object):
 
         fig = self.grid_elem_dict[self.g_category_expenses]
         source = self.grid_source_dict[self.g_category_expenses]
-
-
 
         source.data["x"] = agg_df[self.category]
         source.data["top"] = agg_df[self.price]
