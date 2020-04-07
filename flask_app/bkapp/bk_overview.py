@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
 
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, FactorRange
 from bokeh.models.widgets import Div
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
-from bokeh.transform import cumsum
 
 from datetime import datetime
 
@@ -15,11 +14,14 @@ from math import pi
 
 class Overview(object):
 
-    last_month = "{last_month}"
+    last_month_title = "{last_month} Overview"
     expenses_last_month = "Total Expenses: {expenses_last_month:.2f}"
     total_products_last_month = "Products Bought: {total_products_last_month}"
     different_shops_last_month = "Unique Shops visited: {different_shops_last_month}"
-    savings = "Your savings"
+    savings_positive = "Congratulations! You saved {savings:.2%} of your income this month!"
+    savings_negative = "Uh oh.. You overpaid {savings:.2%} of your income"
+
+    piechart_start_angle = (pi/2)
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname, server_date):
@@ -81,19 +83,23 @@ class Overview(object):
         # Box
         # Box
 
-        output = row(
-            column(
+        output = column(
+            row(
                 self.grid_elem_dict[self.g_last_month],
-                self.grid_elem_dict[self.g_expenses_last_month],
-                self.grid_elem_dict[self.g_total_products_last_month],
-                self.grid_elem_dict[self.g_different_shops_last_month]
             ),
-            column(
-                self.grid_elem_dict[self.g_savings_info],
-                self.grid_elem_dict[self.g_savings_piechart]
-            ),
-            column(
-                self.grid_elem_dict[self.g_category_expenses]
+            row(
+                column(
+                    self.grid_elem_dict[self.g_expenses_last_month],
+                    self.grid_elem_dict[self.g_total_products_last_month],
+                    self.grid_elem_dict[self.g_different_shops_last_month]
+                ),
+                column(
+                    self.grid_elem_dict[self.g_savings_info],
+                    self.grid_elem_dict[self.g_savings_piechart]
+                ),
+                column(
+                    self.grid_elem_dict[self.g_category_expenses]
+                )
             )
         )
 
@@ -123,8 +129,6 @@ class Overview(object):
 
     def update_gridplot(self, month=None):
 
-        month = "02-2019"
-
         self.__update_current_and_future_months(month)
         self.__update_dataframes()
 
@@ -133,9 +137,7 @@ class Overview(object):
         self.__update_total_products_last_month()
         self.__update_different_shops_last_month()
 
-        self.__update_savings_info()
-        self.__update_savings_piechart()
-
+        self.__update_piechart()
         self.__update_category_barplot()
 
 
@@ -144,8 +146,9 @@ class Overview(object):
     def __create_savings_piechart_source(self):
 
         data = {
-            "angle": [0.5*pi, 1.5*pi],
-            "color": ["red", "gray"]
+            "end_angle": [0.5*pi],
+            "color": ["red"],
+            "start_angle": [self.piechart_start_angle]
         }
 
         source = ColumnDataSource(
@@ -158,11 +161,24 @@ class Overview(object):
 
         p = figure(plot_height=150, x_range=(-0.5, 1.0))
 
+        wedge_kwargs = {
+            "x": 0,
+            "y": 1,
+            "radius": 0.4,
+            "direction": "clock",
+        }
+
         p.wedge(
-            x=0, y=1, radius=0.2,
-            start_angle=cumsum("angle", include_zero=True), end_angle=cumsum("angle"),
-            fill_color="color", line_color="gray",
-            source=source
+            start_angle=0, end_angle=2*pi,
+            fill_color="gray", line_color="gray",
+            **wedge_kwargs
+        )
+
+        p.wedge(
+            start_angle="start_angle", end_angle='end_angle',
+            fill_color="color", line_color="color",
+            source=source,
+            **wedge_kwargs
         )
 
         return p
@@ -216,7 +232,7 @@ class Overview(object):
 
     def __update_last_month_title(self):
         last_month = self.last_month
-        self.grid_elem_dict[self.g_last_month].text = self.last_month.format(last_month=last_month)
+        self.grid_elem_dict[self.g_last_month].text = self.last_month_title.format(last_month=last_month)
 
     def __update_expenses_last_month(self):
         expenses_last_month = self.last_month_expense_df[self.price].sum()
@@ -230,32 +246,71 @@ class Overview(object):
         different_shops_last_month = len(unique_values_from_column(self.last_month_expense_df, self.shop))
         self.grid_elem_dict[self.g_different_shops_last_month].text = self.different_shops_last_month.format(different_shops_last_month=different_shops_last_month)
 
-    def __update_savings_info(self):
-        self.grid_elem_dict[self.g_savings_info].text = self.savings
+    def __update_piechart(self):
 
-    def __update_savings_piechart(self):
+        savings = self.__calculate_expense_percentage()
 
+        self.__update_savings_info(savings)
+        self.__update_savings_piechart(savings)
+
+    def __calculate_expense_percentage(self):
+
+        # negative as income is expressed as negative transaction
         income_month = -(self.last_month_income_df[self.price].sum())
         expense_month = self.last_month_expense_df[self.price].sum()
 
-        print(income_month)
-        print(expense_month)
-
         difference = income_month - expense_month
-        part = round((difference / income_month), 2)
 
-        if difference >= 0:
+        if income_month == 0:
+            part = -1
+        else:
+            part = difference / income_month
+
+        return part
+
+    def __update_savings_info(self, savings):
+        if savings >= 0:
+            savings_text = self.savings_positive
+        else:
+            savings_text = self.savings_negative
+
+        self.grid_elem_dict[self.g_savings_info].text = savings_text.format(savings=savings)
+
+    def __update_savings_piechart(self, savings):
+
+        if savings >= 0:
+            part = savings
             color = "green"
         else:
-            part = -part
+            part = -savings
             color = "red"
 
-        angles = [(part * 2*pi) + (pi/4), ((1-part)*2*pi) + (pi/4)]
+        # negative values move angle clockwise
+        angle_value = -(part*2*pi) + self.piechart_start_angle
 
+        #
+        limit = -(2*pi)
+        if angle_value <= limit:
+            angle_value = limit
+
+        angles = [angle_value]
 
         source = self.grid_source_dict[self.g_savings_piechart]
-        source.data["angle"] = angles
-        source.data["color"] = ["gray", color]
+        source.data["end_angle"] = angles
+        source.data["color"] = [color]
 
     def __update_category_barplot(self):
-        pass
+
+        agg_df = self.last_month_expense_df.groupby([self.category]).sum().reset_index().sort_values(by=[self.price], ascending=False)
+
+        fig = self.grid_elem_dict[self.g_category_expenses]
+        source = self.grid_source_dict[self.g_category_expenses]
+
+        fig.x_range = FactorRange(factors=agg_df[self.category].tolist())
+
+        source.data["x"] = agg_df[self.category]
+        source.data["top"] = agg_df[self.price].tolist()
+
+
+
+

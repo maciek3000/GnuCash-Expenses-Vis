@@ -30,9 +30,9 @@ class BokehApp(object):
         self.category = col_mapping["category"]
         self.monthyear = col_mapping["monthyear"]
 
-        self.category = Category(self.category, self.monthyear, self.price, self.product,
+        self.category_view = Category(self.category, self.monthyear, self.price, self.product,
                                  self.date, self.currency, self.shop)
-        self.overview = Overview(self.category, self.monthyear, self.price, self.product,
+        self.overview_view = Overview(self.category, self.monthyear, self.price, self.product,
                                  self.date, self.currency, self.shop, server_date)
 
     def settings(self, cat_name):
@@ -56,10 +56,10 @@ class BokehApp(object):
 
     def category_gridplot(self):
 
-        return self.category.gridplot(self.expense_current_datasource)
+        return self.category_view.gridplot(self.expense_current_datasource)
 
     def overview_gridplot(self):
-        return self.overview.gridplot(self.expense_current_datasource, self.income_current_datasource)
+        return self.overview_view.gridplot(self.expense_current_datasource, self.income_current_datasource)
 
     #TODO: category type radio buttons
 
