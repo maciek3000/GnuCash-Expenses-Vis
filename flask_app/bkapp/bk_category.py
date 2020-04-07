@@ -91,8 +91,10 @@ class Category(object):
         </div>
     """
 
+    # TODO: Transactions DataFrame should be sorted by date explicitly
+
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
-                 date_colname, currency_colname, shop_colname):
+                 date_colname, currency_colname, shop_colname, month_format, color_mapping):
 
         # Column Names
         self.category = category_colname
@@ -102,6 +104,12 @@ class Category(object):
         self.date = date_colname
         self.currency = currency_colname
         self.shop = shop_colname
+
+        # MonthYear Formatting
+        self.monthyear_format = month_format
+
+        # ColorMap Dict
+        self.color_map = color_mapping
 
         # DataFrames
         self.original_df = None  # original dataframe passed to the gridplot function
@@ -300,7 +308,7 @@ class Category(object):
         """
 
         temp_values = [1] * len(self.months)  # done to ensure that the shape of y values is the same as x
-        formatted_months = [datetime.strftime(datetime.strptime(month, "%m-%Y"), "%b-%y") for month in self.months]
+        formatted_months = [datetime.strftime(datetime.strptime(month, self.monthyear_format), "%b-%y") for month in self.months]
         source = ColumnDataSource(
             data={
                 "x": formatted_months,
@@ -333,7 +341,7 @@ class Category(object):
         # the range is being reset to the initialization category range. Therefore, neither Reset nor BoxZoom are
         # added to limit the options for the user to "play" with the graph.
 
-        base_color = "#19529c"
+        base_color = self.color_map["base"]
 
         p = figure(width=360, height=360, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip,
                    toolbar_location="right", tools=['box_select'])
@@ -349,7 +357,7 @@ class Category(object):
 
         p.axis.minor_tick_line_color = None
         p.axis.major_tick_line_color = None
-        p.axis.axis_line_color = "#DCDCDC"
+        p.axis.axis_line_color = self.color_map["background_gray"]
         p.axis.major_label_text_color = "#C5C5C5"
         p.axis.major_label_text_font_size = "13px"
         p.xaxis.major_label_orientation = 0.785  # 45 degrees in radians

@@ -30,10 +30,21 @@ class BokehApp(object):
         self.category = col_mapping["category"]
         self.monthyear = col_mapping["monthyear"]
 
+        color_mapping = {
+            "base": "#19529c",
+            "contrary": "#9c2b19",
+            "text": "#8C8C8C",
+            "link_text": "#8CA8CD",
+            "link_background": "#5E85B9",
+            "background_gray": "#DCDCDC",
+        }
+
+        month_format = "%Y-%m"
+
         self.category_view = Category(self.category, self.monthyear, self.price, self.product,
-                                 self.date, self.currency, self.shop)
+                                 self.date, self.currency, self.shop, month_format, color_mapping)
         self.overview_view = Overview(self.category, self.monthyear, self.price, self.product,
-                                 self.date, self.currency, self.shop, server_date)
+                                 self.date, self.currency, self.shop, month_format, server_date, color_mapping)
 
     def settings(self, cat_name):
         all_cats = sorted(self.expense_org_datasource[cat_name].unique().tolist())

@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 from bokeh.models import ColumnDataSource, FactorRange
-from bokeh.models.widgets import Div
+from bokeh.models.widgets import Div, Select
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 
@@ -14,17 +14,17 @@ from math import pi
 
 class Overview(object):
 
-    last_month_title = "{last_month} Overview"
-    expenses_last_month = "Total Expenses: {expenses_last_month:.2f}"
-    total_products_last_month = "Products Bought: {total_products_last_month}"
-    different_shops_last_month = "Unique Shops visited: {different_shops_last_month}"
-    savings_positive = "Congratulations! You saved {savings:.2%} of your income this month!"
-    savings_negative = "Uh oh.. You overpaid {savings:.2%} of your income"
+    month_title = " Overview"
+    expenses_last_month = "Total Expenses: <span>{expenses_last_month:.2f}</span>"
+    total_products_last_month = "Products Bought: <span>{total_products_last_month}</span>"
+    different_shops_last_month = "Unique Shops visited: <span>{different_shops_last_month}</span>"
+    savings_positive = "Congratulations! You saved <span>{savings:.2%}</span> of your income this month!"
+    savings_negative = "Uh oh.. You overpaid <span>{savings:.2%}</span> of your income"
 
     piechart_start_angle = (pi/2)
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
-                 date_colname, currency_colname, shop_colname, server_date):
+                 date_colname, currency_colname, shop_colname, month_format, server_date, color_mapping):
 
         # Column Names
         self.category = category_colname
@@ -35,26 +35,30 @@ class Overview(object):
         self.currency = currency_colname
         self.shop = shop_colname
 
+        self.monthyear_format = month_format
         self.server_date = server_date
+
+        self.color_map = color_mapping
 
         self.grid_elem_dict = None
         self.grid_source_dict = None
 
         self.original_expense_df = None
         self.original_income_df = None
-        self.last_month_expense_df = None
-        self.current_month_expense_df = None
-        self.last_month_income_df = None
-        self.current_month_income_df = None
+        self.chosen_month_expense_df = None
+        self.next_month_expense_df = None
+        self.chosen_month_income_df = None
+        self.next_month_income_df = None
 
         self.months = None
-        self.last_month = None
-        self.current_month = None
+        self.chosen_month = None
+        self.next_month = None
 
-        self.g_last_month = "Last Month"
-        self.g_expenses_last_month = "Expenses Last Month"
-        self.g_total_products_last_month = "Products Last Month"
-        self.g_different_shops_last_month = "Unique Shops"
+        self.g_month_dropdown = "Month Dropdown"
+        self.g_month_title = "Month Title"
+        self.g_expenses_chosen_month = "Expenses Last Month"
+        self.g_total_products_chosen_month = "Products Last Month"
+        self.g_different_shops_chosen_month = "Unique Shops"
         self.g_savings_info = "Savings Information"
         self.g_savings_piechart = "Savings Piechart"
         self.g_category_expenses = "Category Expenses"
@@ -66,6 +70,8 @@ class Overview(object):
         self.months = unique_values_from_column(self.original_expense_df, self.monthyear)
 
         self.initialize_grid_elements()
+
+
 
         self.update_gridplot()
 
@@ -83,15 +89,22 @@ class Overview(object):
         # Box
         # Box
 
+        def dropdown_callback(attr, old, new):
+            if new != old:
+                self.update_gridplot(new)
+
+        self.grid_elem_dict[self.g_month_dropdown].on_change("value", dropdown_callback)
+
         output = column(
             row(
-                self.grid_elem_dict[self.g_last_month],
+                self.grid_elem_dict[self.g_month_dropdown],
+                self.grid_elem_dict[self.g_month_title],
             ),
             row(
                 column(
-                    self.grid_elem_dict[self.g_expenses_last_month],
-                    self.grid_elem_dict[self.g_total_products_last_month],
-                    self.grid_elem_dict[self.g_different_shops_last_month]
+                    self.grid_elem_dict[self.g_expenses_chosen_month],
+                    self.grid_elem_dict[self.g_total_products_chosen_month],
+                    self.grid_elem_dict[self.g_different_shops_chosen_month]
                 ),
                 column(
                     self.grid_elem_dict[self.g_savings_info],
@@ -111,10 +124,14 @@ class Overview(object):
         source_dict = {}
 
         minor_stat_class = "last_month_minor_info"
-        elem_dict[self.g_last_month] = Div(text="", css_classes=["last_month"])
-        elem_dict[self.g_expenses_last_month] = Div(text="", css_classes=["expenses_last_month"])
-        elem_dict[self.g_total_products_last_month] = Div(text="", css_classes=[minor_stat_class])
-        elem_dict[self.g_different_shops_last_month] = Div(text="", css_classes=[minor_stat_class])
+
+        elem_dict[self.g_month_dropdown] = Select(options=self.months,
+                                                  css_classes=["month_dropdown"])
+
+        elem_dict[self.g_month_title] = Div(text="", css_classes=["month_title"])
+        elem_dict[self.g_expenses_chosen_month] = Div(text="", css_classes=["expenses_last_month"])
+        elem_dict[self.g_total_products_chosen_month] = Div(text="", css_classes=[minor_stat_class])
+        elem_dict[self.g_different_shops_chosen_month] = Div(text="", css_classes=[minor_stat_class])
 
         elem_dict[self.g_savings_info] = Div(text="", css_classes=["savings_information"])
 
@@ -129,7 +146,7 @@ class Overview(object):
 
     def update_gridplot(self, month=None):
 
-        self.__update_current_and_future_months(month)
+        self.__update_chosen_and_next_months(month)
         self.__update_dataframes()
 
         self.__update_last_month_title()
@@ -159,18 +176,18 @@ class Overview(object):
 
     def __create_savings_piechart(self, source):
 
-        p = figure(plot_height=150, x_range=(-0.5, 1.0))
+        p = figure(plot_height=150, x_range=(-0.5, 0.5))
 
         wedge_kwargs = {
             "x": 0,
             "y": 1,
-            "radius": 0.4,
+            "radius": 0.2,
             "direction": "clock",
         }
 
         p.wedge(
             start_angle=0, end_angle=2*pi,
-            fill_color="gray", line_color="gray",
+            fill_color=self.color_map["background_gray"], line_color=self.color_map["background_gray"],
             **wedge_kwargs
         )
 
@@ -180,6 +197,9 @@ class Overview(object):
             source=source,
             **wedge_kwargs
         )
+
+        p.axis.visible = False
+        p.axis.axis_label = None
 
         return p
 
@@ -199,23 +219,31 @@ class Overview(object):
     def __create_category_barplot(self, source):
 
         p = figure(width=480, height=360, x_range=source.data["x"])
-        p.vbar("x", top="top", width=0.9, source=source)
+        p.vbar("x", top="top", width=0.9, color=self.color_map["base"], source=source)
+
+        p.xaxis.major_label_orientation = 0.785
 
         return p
 
     # ========== Updating Grid Elements ========== #
 
-    def __update_current_and_future_months(self, month=None, date_format="%m-%Y"):
+    def __update_chosen_and_next_months(self, month=None, date_format=None):
+        if date_format is None:
+            date_format = self.monthyear_format
+
         if month is None:
             chosen_month = (pd.Timestamp(self.server_date) - pd.DateOffset(months=1)).strftime(date_format)
             if chosen_month not in self.months:
                 chosen_month = self.months[-1]
+
+            # if month is not passed, it means that this is View Initialization and Dropdown Selection should be done
+            self.grid_elem_dict[self.g_month_dropdown].value = chosen_month
         else:
             chosen_month = month
 
         next_month = (pd.Timestamp(datetime.strptime(chosen_month, date_format)) + pd.DateOffset(months=1)).strftime(date_format)
-        self.last_month = chosen_month
-        self.current_month = next_month
+        self.chosen_month = chosen_month
+        self.next_month = next_month
 
     def __update_dataframes(self):
 
@@ -223,28 +251,28 @@ class Overview(object):
         self.__update_income_dataframes()
 
     def __update_expense_dataframes(self):
-        self.last_month_expense_df = self.original_expense_df[self.original_expense_df[self.monthyear] == self.last_month]
-        self.current_month_expense_df = self.original_expense_df[self.original_expense_df[self.monthyear] == self.current_month]
+        self.chosen_month_expense_df = self.original_expense_df[self.original_expense_df[self.monthyear] == self.chosen_month]
+        self.next_month_expense_df = self.original_expense_df[self.original_expense_df[self.monthyear] == self.next_month]
 
     def __update_income_dataframes(self):
-        self.last_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.last_month]
-        self.current_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.current_month]
+        self.chosen_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.chosen_month]
+        self.next_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.next_month]
 
     def __update_last_month_title(self):
-        last_month = self.last_month
-        self.grid_elem_dict[self.g_last_month].text = self.last_month_title.format(last_month=last_month)
+        last_month = self.chosen_month
+        self.grid_elem_dict[self.g_month_title].text = self.month_title.format(last_month=last_month)
 
     def __update_expenses_last_month(self):
-        expenses_last_month = self.last_month_expense_df[self.price].sum()
-        self.grid_elem_dict[self.g_expenses_last_month].text = self.expenses_last_month.format(expenses_last_month=expenses_last_month)
+        expenses_last_month = self.chosen_month_expense_df[self.price].sum()
+        self.grid_elem_dict[self.g_expenses_chosen_month].text = self.expenses_last_month.format(expenses_last_month=expenses_last_month)
 
     def __update_total_products_last_month(self):
-        total_products_last_month = self.last_month_expense_df.shape[0]
-        self.grid_elem_dict[self.g_total_products_last_month].text = self.total_products_last_month.format(total_products_last_month=total_products_last_month)
+        total_products_last_month = self.chosen_month_expense_df.shape[0]
+        self.grid_elem_dict[self.g_total_products_chosen_month].text = self.total_products_last_month.format(total_products_last_month=total_products_last_month)
 
     def __update_different_shops_last_month(self):
-        different_shops_last_month = len(unique_values_from_column(self.last_month_expense_df, self.shop))
-        self.grid_elem_dict[self.g_different_shops_last_month].text = self.different_shops_last_month.format(different_shops_last_month=different_shops_last_month)
+        different_shops_last_month = len(unique_values_from_column(self.chosen_month_expense_df, self.shop))
+        self.grid_elem_dict[self.g_different_shops_chosen_month].text = self.different_shops_last_month.format(different_shops_last_month=different_shops_last_month)
 
     def __update_piechart(self):
 
@@ -256,8 +284,8 @@ class Overview(object):
     def __calculate_expense_percentage(self):
 
         # negative as income is expressed as negative transaction
-        income_month = -(self.last_month_income_df[self.price].sum())
-        expense_month = self.last_month_expense_df[self.price].sum()
+        income_month = -(self.chosen_month_income_df[self.price].sum())
+        expense_month = self.chosen_month_expense_df[self.price].sum()
 
         difference = income_month - expense_month
 
@@ -280,10 +308,10 @@ class Overview(object):
 
         if savings >= 0:
             part = savings
-            color = "green"
+            color = "#0f5e3b"
         else:
             part = -savings
-            color = "red"
+            color = self.color_map["contrary"]
 
         # negative values move angle clockwise
         angle_value = -(part*2*pi) + self.piechart_start_angle
@@ -301,15 +329,17 @@ class Overview(object):
 
     def __update_category_barplot(self):
 
-        agg_df = self.last_month_expense_df.groupby([self.category]).sum().reset_index().sort_values(by=[self.price], ascending=False)
+        agg_df = self.chosen_month_expense_df.groupby([self.category]).sum().reset_index().sort_values(by=[self.price], ascending=False)
 
         fig = self.grid_elem_dict[self.g_category_expenses]
         source = self.grid_source_dict[self.g_category_expenses]
 
-        fig.x_range = FactorRange(factors=agg_df[self.category].tolist())
+
 
         source.data["x"] = agg_df[self.category]
-        source.data["top"] = agg_df[self.price].tolist()
+        source.data["top"] = agg_df[self.price]
+
+        fig.x_range.factors = agg_df[self.category].tolist()
 
 
 

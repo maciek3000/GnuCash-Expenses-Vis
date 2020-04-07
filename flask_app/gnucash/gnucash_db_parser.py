@@ -121,7 +121,7 @@ class GnuCashDBParser(object):
         df[self.date] = df[self.date].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
 
         # adding MonthYear column for easier analysis
-        df[self.monthyear] = df[self.date].dt.strftime('%m-%Y')
+        df[self.monthyear] = df[self.date].dt.strftime('%Y-%m')
 
         # dropping columns that are no longer needed
         df = df.drop([self.name, self.split, self.account], axis=1)
