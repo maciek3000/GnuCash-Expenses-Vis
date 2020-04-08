@@ -343,7 +343,7 @@ class Category(object):
 
         base_color = self.color_map["base"]
 
-        p = figure(width=360, height=360, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip,
+        p = figure(width=550, height=400, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip,
                    toolbar_location="right", tools=['box_select'])
         p.line(x="x", y="y", source=cds, color=base_color, line_width=5, )
 
