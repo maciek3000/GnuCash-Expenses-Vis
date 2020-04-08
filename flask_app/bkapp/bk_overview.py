@@ -15,7 +15,8 @@ from math import pi
 class Overview(object):
 
     month_title = " Overview"
-    expenses_last_month = "Total Expenses: <span>{expenses_last_month:.2f}</span>"
+    expenses_chosen_month = "<span>{expenses_last_month:.2f}</span>"
+    expenses_chosen_month_subtitle = "Total Expenses This Month"
     total_products_last_month = "Products Bought: <span>{total_products_last_month}</span>"
     different_shops_last_month = "Unique Shops visited: <span>{different_shops_last_month}</span>"
     savings_positive = "Congratulations! You saved <span>{savings:.2%}</span> of your income this month!"
@@ -57,6 +58,7 @@ class Overview(object):
         self.g_month_dropdown = "Month Dropdown"
         self.g_month_title = "Month Title"
         self.g_expenses_chosen_month = "Expenses Last Month"
+        self.g_expenses_chosen_month_subtitle = "Expenses Last Month Subtitle"
         self.g_total_products_chosen_month = "Products Last Month"
         self.g_different_shops_chosen_month = "Unique Shops"
         self.g_savings_info = "Savings Information"
@@ -104,8 +106,10 @@ class Overview(object):
             row(
                 column(
                     self.grid_elem_dict[self.g_expenses_chosen_month],
+                    self.grid_elem_dict[self.g_expenses_chosen_month_subtitle],
                     self.grid_elem_dict[self.g_total_products_chosen_month],
-                    self.grid_elem_dict[self.g_different_shops_chosen_month]
+                    self.grid_elem_dict[self.g_different_shops_chosen_month],
+                    css_classes=["info_column"]
                 ),
                 column(
                     self.grid_elem_dict[self.g_savings_info],
@@ -113,7 +117,8 @@ class Overview(object):
                 ),
                 column(
                     self.grid_elem_dict[self.g_category_expenses]
-                )
+                ),
+            css_classes=["chosen_month_row"]
             )
         )
 
@@ -124,15 +129,19 @@ class Overview(object):
         elem_dict = {}
         source_dict = {}
 
-        minor_stat_class = "last_month_minor_info"
-
         elem_dict[self.g_month_dropdown] = Select(options=self.months,
                                                   css_classes=["month_dropdown"])
-
         elem_dict[self.g_month_title] = Div(text="", css_classes=["month_title"])
-        elem_dict[self.g_expenses_chosen_month] = Div(text="", css_classes=["expenses_last_month"])
-        elem_dict[self.g_total_products_chosen_month] = Div(text="", css_classes=[minor_stat_class])
-        elem_dict[self.g_different_shops_chosen_month] = Div(text="", css_classes=[minor_stat_class])
+
+        info_element_class = "info_element"
+        expenses_chosen_month_class = "expenses_chosen_month"
+        elem_dict[self.g_expenses_chosen_month] = Div(
+            text="", css_classes=[info_element_class, expenses_chosen_month_class])
+        elem_dict[self.g_expenses_chosen_month_subtitle] = Div(
+            text=self.expenses_chosen_month_subtitle, css_classes=[info_element_class, expenses_chosen_month_class])
+
+        elem_dict[self.g_total_products_chosen_month] = Div(text="", css_classes=[info_element_class])
+        elem_dict[self.g_different_shops_chosen_month] = Div(text="", css_classes=[info_element_class])
 
         elem_dict[self.g_savings_info] = Div(text="", css_classes=["savings_information"])
 
@@ -274,7 +283,7 @@ class Overview(object):
 
     def __update_expenses_last_month(self):
         expenses_last_month = self.chosen_month_expense_df[self.price].sum()
-        self.grid_elem_dict[self.g_expenses_chosen_month].text = self.expenses_last_month.format(expenses_last_month=expenses_last_month)
+        self.grid_elem_dict[self.g_expenses_chosen_month].text = self.expenses_chosen_month.format(expenses_last_month=expenses_last_month)
 
     def __update_total_products_last_month(self):
         total_products_last_month = self.chosen_month_expense_df.shape[0]

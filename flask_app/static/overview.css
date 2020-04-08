@@ -41,7 +41,6 @@
 
 .bk.bk-input-group {
     width: auto !important;
-    padding: 0px !important;
 }
 
 .bk.bk-input {
@@ -51,5 +50,37 @@
     -webkit-appearance: none;
     width: auto !important;
     padding: 0px !important;
+    background: linear-gradient(to bottom left,transparent 50%,var(--light-gray) 0) bottom left/12px 12px no-repeat,
+        white;
+    border-radius: 0px;
 }
+
+.bk.chosen_month_row {
+    width: 100% !important;
+}
+
+.bk.chosen_month_row > div:last-child {
+    left: 50% !important;
+}
+
+.bk.chosen_month_row > div:nth-child(2) {
+    left: 25% !important;
+}
+
+.bk.expenses_chosen_month {
+    text-align: center !important;
+}
+
+.bk.expenses_chosen_month span {
+    color: var(--background-link-color);
+    font-size: 2em;
+    font-weight: bold;
+}
+
+.bk.info_column .info_element:nth-child(2n+1) {
+    border-top: 1px solid var(--light-gray);
+}
+
+
+
 

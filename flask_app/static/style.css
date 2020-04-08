@@ -97,6 +97,20 @@ html {
     font-family: inherit;
 }
 
+
+.bk.info_column {
+    width: 25%;
+}
+
+.bk.info_element {
+    padding-top: 8px;
+    font-size: 1.1em;
+    text-align: justify;
+    width: 100% !important;
+}
+
+
+
 /* view-specific */
 
 /*

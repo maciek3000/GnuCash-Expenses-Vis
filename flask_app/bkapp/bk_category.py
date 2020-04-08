@@ -194,7 +194,7 @@ class Category(object):
                     self.grid_elem_dict[self.g_category_fraction],
                     self.grid_elem_dict[self.g_total_products_from_category],
                     self.grid_elem_dict[self.g_category_products_fraction],
-                    css_classes=["headline_column"]),
+                    css_classes=["info_column"]),
                 column(self.grid_elem_dict[self.g_statistics_table]),
                 column(
                     self.grid_elem_dict[self.g_dropdown],
@@ -243,11 +243,11 @@ class Category(object):
         elem_dict[self.g_statistics_table] = Div(text="", css_classes=["statistics_table"], )
 
         # 4 Headline Divs
-        headline_class = "info_headline"
-        elem_dict[self.g_total_from_category] = Div(text="", css_classes=[headline_class])
-        elem_dict[self.g_category_fraction] = Div(text="", css_classes=[headline_class])
-        elem_dict[self.g_total_products_from_category] = Div(text="", css_classes=[headline_class])
-        elem_dict[self.g_category_products_fraction] = Div(text="", css_classes=[headline_class])
+        info_element_class = "info_element"
+        elem_dict[self.g_total_from_category] = Div(text="", css_classes=[info_element_class])
+        elem_dict[self.g_category_fraction] = Div(text="", css_classes=[info_element_class])
+        elem_dict[self.g_total_products_from_category] = Div(text="", css_classes=[info_element_class])
+        elem_dict[self.g_category_products_fraction] = Div(text="", css_classes=[info_element_class])
 
         # Line Plot
         source_dict[self.g_line_plot] = self.__create_line_plot_source()
