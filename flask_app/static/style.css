@@ -111,7 +111,18 @@ html {
     position: static !important;
 }
 
+.hover_tooltip {
+    color: var(--normal-text-color);
+    font-size: 1.3em;
+}
 
+.hover_tooltip span:first-child {
+    color: var(--base-color);
+}
+
+.hover_tooltip span:last-child {
+    color: black;
+}
 
 /* view-specific */
 

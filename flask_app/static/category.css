@@ -80,19 +80,6 @@
     left: 25% !important;
 }
 
-.line_tooltip {
-    color: var(--normal-text-color);
-    font-size: 1.3em;
-}
-
-.line_tooltip span:first-child {
-    color: var(--base-color);
-}
-
-.line_tooltip span:last-child {
-    color: black;
-}
-
 .bk.bk-input {
     color: inherit;
     border: 1px solid #D1DCEB;

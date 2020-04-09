@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
 
-from bokeh.models import ColumnDataSource, FactorRange
+from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Div, Select
+from bokeh.models.formatters import FuncTickFormatter
+from bokeh.models.tools import HoverTool
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 
@@ -26,6 +28,19 @@ class Overview(object):
     savings_negative = "Uh oh.. You overpaid <span id='negative_savings'>{savings:.2%}</span> of your income"
 
     category_expenses_title = "Expenses from Categories"
+
+    category_barplot_tooltip = """
+        <div class="hover_tooltip">
+            <div>
+                <span>Category: </span>
+                <span>@x</span>
+            </div>
+            <div>
+                <span>Value: </span>
+                <span>@top{0.00}</y>
+            </div>
+        </div>
+    """
 
     piechart_start_angle = (pi/2)
 
@@ -104,8 +119,6 @@ class Overview(object):
 
         self.grid_elem_dict[self.g_month_dropdown].on_change("value", dropdown_callback)
 
-        # TODO: add draft row for Budget
-
         output = column(
             row(
                 self.grid_elem_dict[self.g_month_dropdown],
@@ -132,6 +145,12 @@ class Overview(object):
                     css_classes=["barchart_column"]
                 ),
             css_classes=["chosen_month_row"]
+            ),
+            row(
+                column(
+                    Div(text="Budget", css_classes=["title_row"]),
+                    Div(text="Work in Progress", style={"font-size": "2em", "font-weight": "bold"})
+                ),
             )
         )
 
@@ -211,8 +230,10 @@ class Overview(object):
             "direction": "clock",
         }
 
+        # TODO: add hover tool with Income/Expenses sums
+
         p = figure(height=250, width=250, x_range=(-wedge_kwargs["radius"], wedge_kwargs["radius"]),
-                   toolbar_location=None)
+                   toolbar_location=None, tools=["tap"])
 
         p.wedge(
             start_angle=0, end_angle=2*pi,
@@ -247,10 +268,16 @@ class Overview(object):
 
     def __create_category_barplot(self, source):
 
-        # TODO: add hover tool
-
-        p = figure(width=550, height=400, x_range=source.data["x"], toolbar_location=None)
+        p = figure(width=550, height=400, x_range=source.data["x"], toolbar_location=None,
+                   tools=["tap"])
         p.vbar("x", top="top", width=0.9, color=self.color_map["link_background"], source=source)
+
+        hover = HoverTool(
+            tooltips=self.category_barplot_tooltip,
+            mode="vline"
+        )
+
+        p.add_tools(hover)
 
         p.xaxis.major_label_orientation = 0.9
         p.axis.major_tick_in = None
@@ -374,12 +401,22 @@ class Overview(object):
         fig = self.grid_elem_dict[self.g_category_expenses]
         source = self.grid_source_dict[self.g_category_expenses]
 
-        # TODO: if category length is too big, reduce it to some factor (e.g. every third element)
-
         fig.x_range.factors = agg_df[self.category].tolist()
 
         source.data["x"] = agg_df[self.category]
         source.data["top"] = agg_df[self.price]
+
+        if len(agg_df[self.category]) >= 25:
+            formatter = FuncTickFormatter(code="""
+                var return_tick;
+                return_tick = tick;
+                if (((index + 1) % 2) == 0) {
+                    return_tick = '';
+                }
+                return return_tick;
+            """)
+
+            fig.xaxis.formatter = formatter
 
 
 

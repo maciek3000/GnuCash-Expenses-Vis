@@ -79,7 +79,7 @@ class Category(object):
                 </table>"""
 
     line_plot_tooltip = """
-        <div class="line_tooltip">
+        <div class="hover_tooltip">
             <div>
                 <span>Month: </span>
                 <span>@x</span>
