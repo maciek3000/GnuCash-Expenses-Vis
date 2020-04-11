@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+from datetime import datetime
+from math import pi
+
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Div, Select
 from bokeh.models.formatters import FuncTickFormatter
@@ -8,11 +11,8 @@ from bokeh.models.tools import HoverTool
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 
-from datetime import datetime
-
 from .pandas_functions import unique_values_from_column
 
-from math import pi
 
 class Overview(object):
 
@@ -25,7 +25,11 @@ class Overview(object):
     total_products_chosen_month = "Products Bought: <span>{total_products_last_month}</span>"
     different_shops_chosen_month = "Unique Shops visited: <span>{different_shops_last_month}</span>"
     savings_positive = "Congratulations! You saved <span id='positive_savings'>{savings:.2%}</span> of your income this month!"
-    savings_negative = "Uh oh.. You overpaid <span id='negative_savings'>{savings:.2%}</span> of your income"
+    savings_negative = "Uh oh.. You overpaid <span id='negative_savings'>{savings:.2%}</span> of your income."
+    income_expenses_text = """
+    <p>Income: <span>{income:,.2f}</span></p>
+    <p>Expenses: <span id={savings_id}>{expenses:,.2f}</span></p>
+    """
 
     category_expenses_title = "Expenses from Categories"
 
@@ -212,7 +216,9 @@ class Overview(object):
         data = {
             "end_angle": [0.5*pi],
             "color": ["red"],
-            "start_angle": [self.piechart_start_angle]
+            "start_angle": [self.piechart_start_angle],
+            "income": [1000],
+            "expenses": [1000]
         }
 
         source = ColumnDataSource(
@@ -341,9 +347,9 @@ class Overview(object):
 
     def __update_piechart(self):
 
-        savings = self.__calculate_expense_percentage()
+        savings, income, expenses = self.__calculate_expense_percentage()
 
-        self.__update_savings_info(savings)
+        self.__update_savings_info(savings, income, expenses)
         self.__update_savings_piechart(savings)
 
     def __calculate_expense_percentage(self):
@@ -359,17 +365,23 @@ class Overview(object):
         else:
             part = difference / income_month
 
-        return part
+        return part, income_month, expense_month
 
-    def __update_savings_info(self, savings):
+    def __update_savings_info(self, savings, income, expenses):
 
         if savings >= 0:
             savings_text = self.savings_positive
+            savings_id = "positive_savings"
+
         else:
             savings = -savings
             savings_text = self.savings_negative
+            savings_id = "negative_savings"
 
-        self.grid_elem_dict[self.g_savings_info].text = savings_text.format(savings=savings)
+        text = savings_text + self.income_expenses_text
+
+        self.grid_elem_dict[self.g_savings_info].text = text.format(
+            savings=savings, income=income, expenses=expenses, savings_id=savings_id)
 
     def __update_savings_piechart(self, savings):
 

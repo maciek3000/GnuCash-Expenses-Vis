@@ -123,6 +123,21 @@
     font-size: 1.1em;
 }
 
+.bk.savings_information p {
+    font-size: 0.8em;
+    font-weight: normal;
+    padding: 0px;
+    margin: 0px;
+}
+
+.bk.savings_information p:nth-child(2) {
+    margin-top: 16px;
+}
+
+.bk.savings_information p:last-child {
+    margin-bottom: 16px;
+}
+
 #positive_savings {
     color: #0f5e3b;
 }
