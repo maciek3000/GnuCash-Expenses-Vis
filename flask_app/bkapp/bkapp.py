@@ -9,6 +9,7 @@ from bokeh.layouts import column, layout, row
 from .bk_category import Category
 from .bk_overview import Overview
 
+from .color_map import ColorMap
 
 class BokehApp(object):
 
@@ -30,14 +31,7 @@ class BokehApp(object):
         self.category = col_mapping["category"]
         self.monthyear = col_mapping["monthyear"]
 
-        color_mapping = {
-            "base": "#19529c",
-            "contrary": "#9c2b19",
-            "text": "#8C8C8C",
-            "link_text": "#8CA8CD",
-            "link_background": "#5E85B9",
-            "background_gray": "#DCDCDC",
-        }
+        color_mapping = ColorMap()
 
         month_format = "%Y-%m"
 

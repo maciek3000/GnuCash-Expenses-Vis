@@ -243,7 +243,7 @@ class Overview(object):
 
         p.wedge(
             start_angle=0, end_angle=2*pi,
-            fill_color=self.color_map["background_gray"], line_color=self.color_map["background_gray"],
+            fill_color=self.color_map.background_gray, line_color=self.color_map.background_gray,
             **wedge_kwargs
         )
 
@@ -276,7 +276,7 @@ class Overview(object):
 
         p = figure(width=550, height=400, x_range=source.data["x"], toolbar_location=None,
                    tools=["tap"])
-        p.vbar("x", top="top", width=0.9, color=self.color_map["link_background"], source=source)
+        p.vbar("x", top="top", width=0.9, color=self.color_map.link_background_color, source=source)
 
         hover = HoverTool(
             tooltips=self.category_barplot_tooltip,
@@ -288,11 +288,11 @@ class Overview(object):
         p.xaxis.major_label_orientation = 0.9
         p.axis.major_tick_in = None
         p.axis.minor_tick_in = None
-        p.axis.major_tick_line_color = self.color_map["background_gray"]
+        p.axis.major_tick_line_color = self.color_map.background_gray
         p.axis.minor_tick_out = None
         p.axis.axis_line_color = "white"
         p.axis.major_label_text_font_size = "13px"
-        p.axis.major_label_text_color = "#C5C5C5"
+        p.axis.major_label_text_color = self.color_map.label_text_color
 
         return p
 
@@ -387,10 +387,10 @@ class Overview(object):
 
         if savings >= 0:
             part = savings
-            color = "#0f5e3b"
+            color = self.color_map.positive_color
         else:
             part = -savings
-            color = self.color_map["contrary"]
+            color = self.color_map.negative_color
 
         # negative values move angle clockwise
         angle_value = -(part*2*pi) + self.piechart_start_angle

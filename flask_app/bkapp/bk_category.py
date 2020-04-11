@@ -108,7 +108,7 @@ class Category(object):
         # MonthYear Formatting
         self.monthyear_format = month_format
 
-        # ColorMap Dict
+        # ColorMap
         self.color_map = color_mapping
 
         # DataFrames
@@ -341,7 +341,7 @@ class Category(object):
         # the range is being reset to the initialization category range. Therefore, neither Reset nor BoxZoom are
         # added to limit the options for the user to "play" with the graph.
 
-        base_color = self.color_map["base"]
+        base_color = self.color_map.base_color
 
         p = figure(width=550, height=400, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip,
                    toolbar_location="right", tools=['box_select'])
@@ -357,8 +357,8 @@ class Category(object):
 
         p.axis.minor_tick_line_color = None
         p.axis.major_tick_line_color = None
-        p.axis.axis_line_color = self.color_map["background_gray"]
-        p.axis.major_label_text_color = "#C5C5C5"
+        p.axis.axis_line_color = self.color_map.background_gray
+        p.axis.major_label_text_color = self.color_map.label_text_color
         p.axis.major_label_text_font_size = "13px"
         p.xaxis.major_label_orientation = 0.785  # 45 degrees in radians
 
