@@ -75,7 +75,7 @@ def test_create_expense_df_from_simple_book(gnucash_db_parser_simple_book):
         "ALL_CATEGORIES": ["Expenses:Main Type #1:Fruits:Apples", "Expenses:Main Type #2:Dairy:Eggs"],
         "Type": ["Main Type #1", "Main Type #2"],
         "Category": ["Apples", "Eggs"],
-        "MonthYear": ["01-2019"]
+        "MonthYear": ["2019-01"]
     }
 
     df = gnucash_db_parser_simple_book.get_expenses_df()
@@ -119,7 +119,7 @@ def test_create_income_df_from_simple_book(gnucash_db_parser_simple_book):
             "Shop": [np.nan, np.nan],
             "Date": ([date(year=2019, month=1, day=1)]*2),
             "Price": [-1000.0, -1500.0],
-            "MonthYear": ["01-2019", "01-2019"],
+            "MonthYear": ["2019-01", "2019-01"],
             "ALL_CATEGORIES": ["Income:Income #1", "Income:Income #2"],
             "Currency": ["PLN", "PLN"],
             "Type": ["Income #1", "Income #2"],
@@ -242,7 +242,7 @@ def test_create_income_df_from_example_book(gnucash_db_parser_example_book):
     )
     expected_df["Shop"] = expected_df["Shop"].astype("object")
     expected_df["Date"] = pd.Series(sorted([datetime(year=2019, day=25, month=x) for x in range(1, 13)]*2))
-    expected_df["MonthYear"] = expected_df["Date"].dt.strftime("%m-%Y")
+    expected_df["MonthYear"] = expected_df["Date"].dt.strftime("%Y-%m")
     actual_df = gnucash_db_parser_example_book.get_income_df()
 
     for col in expected_df.columns:

@@ -4,6 +4,7 @@ import tempfile
 import os
 from datetime import date, datetime
 from decimal import Decimal
+from flask_app.bkapp.color_map import ColorMap
 
 from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
 from flask_app.gnucash.gnucash_db_parser import GnuCashDBParser
@@ -192,12 +193,16 @@ def gnucash_db_parser_simple_book(simple_book_path):
 # ========== bkapp ========== #
 
 
+def month_format():
+    return "%Y-%m"
+
+
 def bk_months():
     """Returns list of ALL months used in creation of bk_category object."""
+    months = ["2019-{x:02d}".format(x=x) for x in range(1, 13)]
 
-    months = ["01-2019", "02-2019", "03-2019", "04-2019", "05-2019", "06-2019",
-              "07-2019", "08-2019", "09-2019", "10-2019", "11-2019", "12-2019"]
     return months
+
 
 @pytest.fixture
 def bk_categories():
@@ -228,6 +233,7 @@ def bk_category_chosen_category():
 
     return "Bread"
 
+
 @pytest.fixture
 def bk_category(gnucash_db_parser_example_book):
     """Returns initialized bk_category Object.
@@ -239,7 +245,12 @@ def bk_category(gnucash_db_parser_example_book):
     """
 
     columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
-    category = Category(*columns)
+    month_format_category = month_format()
+    color_map = ColorMap()
+
+    args = columns + [month_format_category, color_map]
+
+    category = Category(*args)
     category.chosen_category = bk_category_chosen_category()
     category.months = bk_months()
     category.original_df = gnucash_db_parser_example_book.get_expenses_df()
@@ -256,10 +267,22 @@ def bk_category_initialized(bk_category):
 
 # ========== bk_overview ========== #
 
+
 @pytest.fixture
 def bk_overview():
     columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
     test_date = datetime(year=2019, month=2, day=1)
-    params = columns + [test_date]
-    overview = Overview(*params)
+    month_format_overview = month_format()
+    color_map = ColorMap()
+
+    args = columns + [month_format_overview, test_date, color_map]
+    overview = Overview(*args)
+    overview.months = bk_months()
+
     return overview
+
+
+@pytest.fixture
+def bk_overview_initialized(bk_overview):
+    bk_overview.initialize_grid_elements()
+    return bk_overview

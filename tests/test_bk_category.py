@@ -19,11 +19,11 @@ def test_update_chosen_category(bk_category):
 @pytest.mark.parametrize(
     ("indices", "result"),
     (
-            ([0, 1, 4], ["01-2019", "02-2019", "05-2019"]),
-            ([0], ["01-2019"]),
-            ([], ["01-2019", "02-2019", "03-2019", "04-2019", "05-2019", "06-2019",
-                  "07-2019", "08-2019", "09-2019", "10-2019", "11-2019", "12-2019"]),
-            ([1, 6, 3], ["02-2019", "07-2019", "04-2019"])
+            ([0, 1, 4], ["2019-01", "2019-02", "2019-05"]),
+            ([0], ["2019-01"]),
+            ([], ["2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06",
+                  "2019-07", "2019-08", "2019-09", "2019-10", "2019-11", "2019-12"]),
+            ([1, 6, 3], ["2019-02", "2019-07", "2019-04"])
     )
 )
 def test_update_selected_months(bk_category, indices, result):
@@ -93,8 +93,8 @@ def test_update_chosen_category_dataframe(bk_category, bk_categories, category, 
 @pytest.mark.parametrize(
     ("months", "expected_sum"),
     (
-            (["03-2019", "04-2019", "05-2019"], 727.01),
-            (["05-2019", "01-2019"], 479.15),
+            (["2019-03", "2019-04", "2019-05"], 727.01),
+            (["2019-05", "2019-01"], 479.15),
             ([], 2789.28)
     )
 )
@@ -296,15 +296,15 @@ def test_update_line_plot(bk_category_initialized, category, expected_values, ex
 @pytest.mark.parametrize(
     ("category", "chosen_months", "expected_values"),
     (
-            ("Bread", ["01-2019", "03-2019", "04-2019"], {"White Bread": 54,
+            ("Bread", ["2019-01", "2019-03", "2019-04"], {"White Bread": 54,
                                                           "Rye Bread": 48,
                                                           "Butter": 62}),
-            ("Petrol", ["01-2019", "02-2019", "03-2019", "04-2019", "05-2019", "06-2019",
-                        "07-2019", "08-2019", "09-2019", "10-2019", "11-2019", "12-2019"],
+            ("Petrol", ["2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06",
+                        "2019-07", "2019-08", "2019-09", "2019-10", "2019-11", "2019-12"],
              {
                  "Petrol": 11,
              }),
-            ("Rent", ["06-2019"], {"Rent": 1})
+            ("Rent", ["2019-06"], {"Rent": 1})
     )
 )
 def test_update_product_histogram_table(bk_category_initialized, category, chosen_months, expected_values):
@@ -330,11 +330,11 @@ def test_update_product_histogram_table(bk_category_initialized, category, chose
 @pytest.mark.parametrize(
     ("category", "chosen_months", "expected_sum", "expected_count"),
     (
-            ("Bread", ["01-2019", "03-2019", "04-2019"], 694.04, 164),
-            ("Petrol", ["01-2019", "02-2019", "03-2019", "04-2019", "05-2019", "06-2019",
-                        "07-2019", "08-2019", "09-2019", "10-2019", "11-2019", "12-2019"],
+            ("Bread", ["2019-01", "2019-03", "2019-04"], 694.04, 164),
+            ("Petrol", ["2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06",
+                        "2019-07", "2019-08", "2019-09", "2019-10", "2019-11", "2019-12"],
              1661.97, 11),
-            ("Rent", ["06-2019"], 2000.00, 1)
+            ("Rent", ["2019-06"], 2000.00, 1)
     )
 )
 def test_update_transactions_table(bk_category_initialized, category, chosen_months, expected_sum, expected_count):
