@@ -269,7 +269,7 @@ def bk_category_initialized(bk_category):
 
 
 @pytest.fixture
-def bk_overview():
+def bk_overview(gnucash_db_parser_example_book):
     columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
     test_date = datetime(year=2019, month=2, day=1)
     month_format_overview = month_format()
@@ -278,6 +278,8 @@ def bk_overview():
     args = columns + [month_format_overview, test_date, color_map]
     overview = Overview(*args)
     overview.months = bk_months()
+    overview.original_expense_df = gnucash_db_parser_example_book.get_expenses_df()
+    overview.original_income_df = gnucash_db_parser_example_book.get_income_df()
 
     return overview
 

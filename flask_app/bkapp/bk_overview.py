@@ -18,12 +18,12 @@ class Overview(object):
 
     month_title = " Overview"
 
-    expenses_chosen_month = "<span>{expenses_last_month:,.2f}</span>"
+    expenses_chosen_month = "<span>{expenses_chosen_month:,.2f}</span>"
     expenses_chosen_month_subtitle = "Total Expenses This Month"
 
     trivia_title = "Trivia"
-    total_products_chosen_month = "Products Bought: <span>{total_products_last_month}</span>"
-    different_shops_chosen_month = "Unique Shops visited: <span>{different_shops_last_month}</span>"
+    total_products_chosen_month = "Products Bought: <span>{total_products_chosen_month}</span>"
+    different_shops_chosen_month = "Unique Shops visited: <span>{different_shops_chosen_month}</span>"
     savings_positive = "Congratulations! You saved <span id='positive_savings'>{savings:.2%}</span> of your income this month!"
     savings_negative = "Uh oh.. You overpaid <span id='negative_savings'>{savings:.2%}</span> of your income."
     income_expenses_text = """
@@ -123,6 +123,7 @@ class Overview(object):
 
         self.grid_elem_dict[self.g_month_dropdown].on_change("value", dropdown_callback)
 
+
         output = column(
             row(
                 self.grid_elem_dict[self.g_month_dropdown],
@@ -200,10 +201,10 @@ class Overview(object):
         self.__update_chosen_and_next_months(month)
         self.__update_dataframes()
 
-        self.__update_last_month_title()
-        self.__update_expenses_last_month()
-        self.__update_total_products_last_month()
-        self.__update_different_shops_last_month()
+        self.__update_chosen_month_title()
+        self.__update_expenses_chosen_month()
+        self.__update_total_products_chosen_month()
+        self.__update_different_shops_chosen_month()
 
         self.__update_piechart()
         self.__update_category_barplot()
@@ -329,21 +330,21 @@ class Overview(object):
         self.chosen_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.chosen_month]
         self.next_month_income_df = self.original_income_df[self.original_income_df[self.monthyear] == self.next_month]
 
-    def __update_last_month_title(self):
+    def __update_chosen_month_title(self):
         last_month = self.chosen_month
         self.grid_elem_dict[self.g_month_title].text = self.month_title.format(last_month=last_month)
 
-    def __update_expenses_last_month(self):
-        expenses_last_month = self.chosen_month_expense_df[self.price].sum()
-        self.grid_elem_dict[self.g_expenses_chosen_month].text = self.expenses_chosen_month.format(expenses_last_month=expenses_last_month)
+    def __update_expenses_chosen_month(self):
+        expenses_chosen_month = self.chosen_month_expense_df[self.price].sum()
+        self.grid_elem_dict[self.g_expenses_chosen_month].text = self.expenses_chosen_month.format(expenses_chosen_month=expenses_chosen_month)
 
-    def __update_total_products_last_month(self):
-        total_products_last_month = self.chosen_month_expense_df.shape[0]
-        self.grid_elem_dict[self.g_total_products_chosen_month].text = self.total_products_chosen_month.format(total_products_last_month=total_products_last_month)
+    def __update_total_products_chosen_month(self):
+        total_products_chosen_month = self.chosen_month_expense_df.shape[0]
+        self.grid_elem_dict[self.g_total_products_chosen_month].text = self.total_products_chosen_month.format(total_products_chosen_month=total_products_chosen_month)
 
-    def __update_different_shops_last_month(self):
-        different_shops_last_month = len(unique_values_from_column(self.chosen_month_expense_df, self.shop))
-        self.grid_elem_dict[self.g_different_shops_chosen_month].text = self.different_shops_chosen_month.format(different_shops_last_month=different_shops_last_month)
+    def __update_different_shops_chosen_month(self):
+        different_shops_chosen_month = len(unique_values_from_column(self.chosen_month_expense_df, self.shop))
+        self.grid_elem_dict[self.g_different_shops_chosen_month].text = self.different_shops_chosen_month.format(different_shops_chosen_month=different_shops_chosen_month)
 
     def __update_piechart(self):
 
