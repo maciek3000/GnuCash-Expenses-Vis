@@ -370,6 +370,7 @@ class Overview(object):
 
     def __update_savings_info(self, savings, income, expenses):
 
+        # id is needed for income/expense values to have aligned formatting
         if savings >= 0:
             savings_text = self.savings_positive
             savings_id = "positive_savings"

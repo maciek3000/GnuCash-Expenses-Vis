@@ -1,7 +1,8 @@
 import pytest
+import numpy as np
 from datetime import datetime
 
-from math import isclose
+from math import isclose, pi
 
 from flask_app.bkapp.pandas_functions import unique_values_from_column
 
@@ -239,3 +240,167 @@ def test_update_different_shops_chosen_month(bk_overview_initialized, month, exp
     actual_text = bk_overview_initialized.grid_elem_dict[bk_overview_initialized.g_different_shops_chosen_month].text
 
     assert actual_text == expected_text
+
+
+@pytest.mark.parametrize(
+    ("chosen_month", "expected_savings", "expected_income", "expected_expenses"),
+    (
+        ("2019-01", 0.1395, 6000, 5162.93),
+        ("2019-03", 0.2310, 6000, 4613.9),
+        ("2020-01", np.nan, None, None)
+    )
+)
+def test_calculate_expense_percentage(
+        bk_overview_initialized, chosen_month, expected_savings, expected_income, expected_expenses
+):
+    """Testing if calculating_expense_percentages works correctly."""
+
+    bk_overview_initialized.chosen_month = chosen_month
+    bk_overview_initialized._Overview__update_expense_dataframes()
+    bk_overview_initialized._Overview__update_income_dataframes()
+
+    actual_savings, actual_income, actual_expenses = bk_overview_initialized._Overview__calculate_expense_percentage()
+    if expected_income is not None:
+        assert isclose(expected_income, actual_income)
+        assert isclose(expected_expenses, actual_expenses)
+        assert isclose(expected_savings, actual_savings, rel_tol=1e-04)
+    else:
+        assert np.isnan(actual_savings)
+        assert actual_income == 0
+        assert actual_expenses == 0
+
+
+@pytest.mark.parametrize(
+    ("savings", "income", "expenses"),
+    (
+        (0.3549, 2000, 1290.05),
+        (0.1840, 5879.25, 4796.99),
+        (0.2500, 1000, 750),
+        (0, 1000, 1000)
+    )
+)
+def test_update_savings_info_positive(bk_overview_initialized, savings, income, expenses):
+    """Testing if update_savings_info function works correctly when savings argument is positive or 0."""
+
+    savings_id = "positive_savings"
+    expected_text = (bk_overview_initialized.savings_positive + bk_overview_initialized.income_expenses_text).format(
+        savings=savings, income=income, expenses=expenses, savings_id=savings_id
+    )
+
+    bk_overview_initialized._Overview__update_savings_info(savings, income, expenses)
+    actual_text = bk_overview_initialized.grid_elem_dict[bk_overview_initialized.g_savings_info].text
+    assert actual_text == expected_text
+
+
+@pytest.mark.parametrize(
+    ("savings", "income", "expenses"),
+    (
+        (-0.2843, 2000, 2568.76),
+        (-1.4870, 4985.23, 12398.58),
+        (-0.25, 1000, 1250)
+    )
+)
+def test_update_savings_info_negative(bk_overview_initialized, savings, income, expenses):
+    """Testing if update_savings_info function works correctly when savings argument is negative."""
+
+    savings_id = "negative_savings"
+    expected_savings = - savings
+    expected_text = (bk_overview_initialized.savings_negative + bk_overview_initialized.income_expenses_text).format(
+        savings=expected_savings, income=income, expenses=expenses, savings_id=savings_id
+    )
+
+    bk_overview_initialized._Overview__update_savings_info(savings, income, expenses)
+    actual_text = bk_overview_initialized.grid_elem_dict[bk_overview_initialized.g_savings_info].text
+    assert actual_text == expected_text
+
+
+@pytest.mark.parametrize(
+    ("savings", "start_angle", "expected_angle"),
+    (
+        (0.25,  pi, 0.5 * pi),
+        (1, (pi/2), -1.5 * pi),
+        (0.56, 0, -1.12 * pi)
+    )
+)
+def test_update_savings_piechart_positive_savings(bk_overview_initialized, savings, start_angle, expected_angle):
+    """Testing if update_savings_piechart function correctly assigns color and end angle when savings are positive."""
+
+    expected_color = bk_overview_initialized.color_map.positive_color
+
+    bk_overview_initialized.piechart_start_angle = start_angle
+    bk_overview_initialized._Overview__update_savings_piechart(savings)
+
+    source = bk_overview_initialized.grid_source_dict[bk_overview_initialized.g_savings_piechart]
+
+    actual_color = source.data["color"][0]
+    actual_angle = source.data["end_angle"][0]
+
+    assert actual_color == expected_color
+    assert isclose(actual_angle, expected_angle, rel_tol=1e-07)
+
+
+@pytest.mark.parametrize(
+    ("savings", "start_angle", "expected_angle"),
+    (
+        (-0.25, pi, 0.5 * pi),
+        (-1, (pi / 2), -1.5 * pi),
+        (-0.56, 0, -1.12 * pi),
+        (-3.14, 1.5*pi, -2*pi)
+    )
+)
+def test_update_savings_piechart_negative_savings(bk_overview_initialized, savings, start_angle, expected_angle):
+    """Testing if update_savings_piechart function correctly assigns color and end angle when savings are negative."""
+
+    expected_color = bk_overview_initialized.color_map.negative_color
+
+    bk_overview_initialized.piechart_start_angle = start_angle
+    bk_overview_initialized._Overview__update_savings_piechart(savings)
+
+    source = bk_overview_initialized.grid_source_dict[bk_overview_initialized.g_savings_piechart]
+
+    actual_color = source.data["color"][0]
+    actual_angle = source.data["end_angle"][0]
+
+    assert actual_color == expected_color
+    assert isclose(actual_angle, expected_angle, rel_tol=1e-07)
+
+
+@pytest.mark.parametrize(
+    ("chosen_month", "expected_categories", "expected_values"),
+    (
+        (
+            "2019-01",
+            ["Rent", "Clothes", "Other", "Meat", "Fruits and Vegetables", "Bread", "Eggs", "Chips",
+             "Water and Electricity", "Personal - Susan", "Toilet"],
+            [2000, 1403.98, 364.52, 319.86, 299.73, 223.09, 191.64, 148.66, 146.55, 40.02, 24.88]
+        ),
+        (
+            "2019-06",
+            ["Rent", "Other", "Fruits and Vegetables", "Bread", "Meat", "Eggs", "Clothes", "Chips",
+             "Personal - John", "Water and Electricity", "Toilet", "Personal - Susan"],
+            [2000, 403.32, 302.78, 253.01, 238.09, 200.61, 126.91, 107.05, 97.73, 92.49, 39.75, 14.61]
+        )
+    )
+)
+def test_update_category_barplot(bk_overview_initialized, chosen_month, expected_categories, expected_values):
+    """Testing if updating category expenses barplot works correctly."""
+
+    bk_overview_initialized.chosen_month = chosen_month
+    bk_overview_initialized._Overview__update_expense_dataframes()
+
+    bk_overview_initialized._Overview__update_category_barplot()
+
+    fig = bk_overview_initialized.grid_elem_dict[bk_overview_initialized.g_category_expenses]
+    source = bk_overview_initialized.grid_source_dict[bk_overview_initialized.g_category_expenses]
+
+    actual_x_range = fig.x_range.factors
+    actual_categories = source.data["x"].tolist()
+    actual_values = source.data["top"].tolist()
+
+    assert actual_x_range == expected_categories
+    assert actual_categories == expected_categories
+
+    assert len(actual_values) > 0
+
+    for i in range(len(actual_values)):
+        assert isclose(actual_values[i], expected_values[i], rel_tol=1e-04)
