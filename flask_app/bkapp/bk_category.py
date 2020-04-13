@@ -94,8 +94,6 @@ class Category(object):
         </div>
     """
 
-    # TODO: Transactions DataFrame should be sorted by date explicitly
-
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname, month_format, color_mapping):
 
@@ -695,11 +693,13 @@ class Category(object):
             somewhere along .chosen_months months. Therefore, .chosen_months_and_category_df is used as a basis for
             this function.
             DataTable only shows transactions in a format specified while creating the DataTable, so no calculations
-            are necessary. For visual clarity, np.nan values are replaced with single hyphen "-".
+            are necessary. For visual clarity, np.nan values are replaced with single hyphen "-" and values are
+            sorted by .date column.
             Only Grid Source Element is modified - no need to modify the DataTable itself.
 
             Grid Source Element .g_transactions[.data] is updated.
         """
 
         df = self.chosen_months_and_category_df.fillna("-")
+        df = df.sort_values(by=[self.date], ascending=True)
         self.grid_source_dict[self.g_transactions].data = df

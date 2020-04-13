@@ -616,9 +616,8 @@ class Overview(object):
             Grid Element .g_category_expenses and Grid Source Element .g_category_expenses are updated.
         """
 
-
-        agg_df = self.chosen_month_expense_df.groupby([self.category]).sum().reset_index().sort_values(by=[self.price],
-                                                                                                       ascending=False)
+        agg_df = self.chosen_month_expense_df.groupby([self.category]).sum().reset_index().sort_values(
+                    by=[self.price], ascending=False)
 
         fig = self.grid_elem_dict[self.g_category_expenses]
         source = self.grid_source_dict[self.g_category_expenses]
@@ -678,7 +677,7 @@ class Overview(object):
 
             Returns part, income and expense numbers.
         """
-        
+
         # negative as income is expressed as negative transaction
         income_month = -(self.chosen_month_income_df[self.price].sum())
         expense_month = self.chosen_month_expense_df[self.price].sum()
