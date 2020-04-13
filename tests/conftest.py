@@ -286,5 +286,6 @@ def bk_overview(gnucash_db_parser_example_book):
 
 @pytest.fixture
 def bk_overview_initialized(bk_overview):
-    bk_overview.initialize_grid_elements()
+    month = "2019-02"
+    bk_overview.initialize_grid_elements(month)
     return bk_overview

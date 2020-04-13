@@ -11,9 +11,12 @@ from bokeh.models.widgets import Div
 
 
 class Category(object):
-    """Category Object that provides wrapping and methods to generate gridplot used in Category View in flask_app.
+    """Category Object that provides methods to generate gridplot used in Category View in flask_app.
 
-        Object expects appropriate column names for the dataframe that will be provided to other methods.
+        Object expects:
+            - appropriate column names for the dataframe that will be provided to other methods;
+            - month_format string, which represents in what string format date in monthyear column was saved;
+            - color_map ColorMap object, which exposes attributes for specific colors.
 
         Main methods are:
             - gridplot() : workhorse of the Object, creates elements gridplot, creates callbacks and updates
@@ -106,10 +109,10 @@ class Category(object):
         self.shop = shop_colname
 
         # MonthYear Formatting
-        self.monthyear_format = month_format
+        self.monthyear_format = month_format  # formatting of date in MonthYear column
 
         # ColorMap
-        self.color_map = color_mapping
+        self.color_map = color_mapping  # ColorMap object exposing attributes with specific colors
 
         # DataFrames
         self.original_df = None  # original dataframe passed to the gridplot function
@@ -142,6 +145,8 @@ class Category(object):
         """Main function of Category Object. Creates Gridplot with appropriate Visualizations and Elements and
             returns it.
 
+            Accepts dataframe argument that should be a Dataframe representing Expenses.
+
             The function does several things:
                 - initializes the gridplot,
                 - chooses the first category that will be displayed (first item of all categories
@@ -169,6 +174,7 @@ class Category(object):
         self.initialize_grid_elements()
         self.update_grid_on_chosen_category_change()
 
+        # Setting up the Callbacks
         def dropdown_callback(attr, old, new):
             if new != old:
                 self.__update_chosen_category(new)
@@ -229,7 +235,7 @@ class Category(object):
             changed (e.g. Line Plot).
 
             In the end, all elements go into one dictionary, whereas DataSources go into other dictionary which are
-            then placed into .grid_elem_dict and .grid_source_dict attributes.
+            then placed into .grid_elem_dict and .grid_source_dict attributes, respectively.
 
             Purposes of Elements are described either in the functions that create them or in the functions that
             update the content of the Element.

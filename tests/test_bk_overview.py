@@ -33,7 +33,9 @@ def test_initialize_grid_elements(bk_overview):
         bk_overview.g_category_expenses
     ]
 
-    bk_overview.initialize_grid_elements()
+    first_month = "2019-01"
+
+    bk_overview.initialize_grid_elements(first_month)
 
     # checking if Grid Elements are initialized
     for name, element in grid_elems:
@@ -63,22 +65,19 @@ def test_update_chosen_and_next_months(bk_overview, test_date, expected_chosen, 
 
 
 @pytest.mark.parametrize(
-    ("server_date", "expected_chosen", "expected_next"),
+    ("server_date", "expected_month"),
     (
-            (datetime(year=2019, month=2, day=1), "2019-01", "2019-02"),
-            (datetime(year=2019, month=6, day=1), "2019-05", "2019-06"),
-            (datetime(year=2020, month=3, day=1), "2019-12", "2020-01")
+            (datetime(year=2019, month=2, day=1), "2019-01"),
+            (datetime(year=2019, month=6, day=1), "2019-05"),
+            (datetime(year=2020, month=3, day=1), "2019-12")
     )
 )
-def test_update_chosen_and_next_months_with_different_server_date(
-        bk_overview_initialized, server_date, expected_chosen, expected_next
-):
-    """Testing if update_chosen_and_next_months function works correctly when no date is passed as an argument."""
+def test_choose_month_based_on_server_date(bk_overview_initialized, server_date, expected_month):
+    """Testing if choosing month based on server date works correctly."""
     bk_overview_initialized.server_date = server_date
-    bk_overview_initialized._Overview__update_chosen_and_next_months()
+    actual_month = bk_overview_initialized._Overview__choose_month_based_on_server_date()
 
-    assert bk_overview_initialized.chosen_month == expected_chosen
-    assert bk_overview_initialized.next_month == expected_next
+    assert actual_month == expected_month
 
 
 @pytest.mark.parametrize(
@@ -150,27 +149,6 @@ def test_update_income_dataframes(bk_overview_initialized):
         else:
             assert len(next_month_months) == 0
             assert bk_overview_initialized.next_month_income_df[bk_overview_initialized.price].sum() == 0
-
-
-@pytest.mark.parametrize(
-    ("month",),
-    (
-        ("2019-01",),
-        ("2020-01",),
-        ("1990-10",),
-    )
-)
-def test_update_chosen_month_title(bk_overview_initialized, month):
-    """Testing if updating month_title Div works correctly."""
-
-    expected_text = bk_overview_initialized.month_title.format(last_month=month)
-
-    bk_overview_initialized.chosen_month = month
-    bk_overview_initialized._Overview__update_chosen_month_title()
-
-    actual_text = bk_overview_initialized.grid_elem_dict[bk_overview_initialized.g_month_title].text
-
-    assert actual_text == expected_text
 
 
 @pytest.mark.parametrize(
