@@ -8,6 +8,7 @@ from bokeh.layouts import column, layout, row
 
 from .bk_category import Category
 from .bk_overview import Overview
+from .bk_trends import Trends
 
 from .color_map import ColorMap
 
@@ -40,6 +41,9 @@ class BokehApp(object):
         self.overview_view = Overview(self.category, self.monthyear, self.price, self.product,
                                  self.date, self.currency, self.shop, month_format, server_date, color_mapping)
 
+        self.trends_view = Trends(self.category, self.monthyear, self.price, self.product,
+                                self.date, self.currency, self.shop, month_format, color_mapping)
+
     def settings(self, cat_name):
         all_cats = sorted(self.expense_org_datasource[cat_name].unique().tolist())
         current_cats = self.expense_current_datasource[cat_name].unique().tolist()
@@ -65,6 +69,9 @@ class BokehApp(object):
 
     def overview_gridplot(self):
         return self.overview_view.gridplot(self.expense_current_datasource, self.income_current_datasource)
+
+    def trends_gridplot(self):
+        return self.trends_view.gridplot(self.expense_current_datasource)
 
     #TODO: category type radio buttons
 

@@ -49,7 +49,7 @@ class BokehServer(object):
 
     def trends(self, doc):
 
-        fig = self.bkapp.trends("MonthYear")
+        fig = self.bkapp.trends_gridplot()
         doc.add_root(fig)
         doc.theme = self.theme
 
