@@ -175,9 +175,9 @@ class Trends(object):
     def __create_heatmap_source(self):
 
         data = {
-            "x": [0],
-            "y": [0],
-            "values": [0],
+            "week": [0],
+            "weekday": [0],
+            "value": [0],
             "date": [0]
         }
 
@@ -194,23 +194,27 @@ class Trends(object):
         grouped = [(x.split("-")[0], x.split("-")[1]) for x in self.months]
 
 
-        y_weekdays = list(map(lambda x: str(x), list(range(7))))
+        y_weekdays = [str(x) for x in range(6, -1, -1)]
         x_weeks = list(map(lambda x: str(x), range(1, 53)))
 
-        palette = ["#75968f", "#a5bab7", "#c9d9d3", "#e2e2e2", "#dfccce", "#ddb7b1", "#cc7878", "#933b41", "#550b1d"]
-        cmap = LinearColorMapper(palette=palette, low=0, high=3000)
+        rgb = self.color_map.base_color_rgb
+        palette = [(rgb[0], rgb[1], rgb[2], x) for x in np.linspace(0.5, 1.0, 5)]
+        print(palette)
+        palette = [(100, 100, 100), (200, 200, 200)]
+        # palette = ["#75968f", "#a5bab7", "#c9d9d3", "#e2e2e2", "#dfccce", "#ddb7b1", "#cc7878", "#933b41", "#550b1d"]
+        cmap = LinearColorMapper(palette=palette, low=0, high=1)
 
         p = figure(
             height=280, width=1080,
             x_range=x_weeks, y_range=y_weekdays,
             x_axis_location="above",
-            tooltips=[("date", "@date"), ("price", "@values")]
+            tooltips=[("date", "@date"), ("price", "@value")]
         )
 
         p.rect(
-            x="x", y="y", width=1, height=1,
+            x="week", y="weekday", width=1, height=1,
             source=source,  fill_color={
-                "field": "values", "transform": cmap
+                "field": "value", "transform": cmap
             },
             line_color=None
         )
@@ -248,19 +252,28 @@ class Trends(object):
         grouped = self.current_expense_df.groupby(by=[self.date]).sum().reset_index()
         grouped["weekday"] = grouped[self.date].dt.weekday
         grouped["month"] = grouped[self.date].dt.month.apply(lambda x: "{x:02d}".format(x=x))
-        grouped["year"] = grouped[self.date].dt.year
-        grouped["week"] = grouped[self.date].dt.week
+        grouped["year"] = grouped[self.date].dt.year.astype(str)
+        grouped["week"] = grouped[self.date].dt.weekofyear.apply(lambda x: "{x:02d}".format(x=x))
 
+        zipped = list(zip(grouped["year"].tolist(), grouped["week"].tolist()))
+
+        self.heatmap_color_map.high = grouped[self.price].max()
+        self.heatmap_color_map.low = 0
+
+        zipped_range = sorted(list(set(zipped)))
+
+        fig.x_range = FactorRange(*zipped_range)
 
         # df = self.current_expense_df.copy()
         # df["weekday"] = df[self.date].dt.weekday
         # df["Month"] = df[self.date].dt.month.apply(lambda x: "{x:02d}".format(x=x))
         # df["Year"] = df[self.date].dt.year.astype("str")
 
+        data["year"] = grouped["year"]
         data["date"] = grouped[self.date].dt.strftime("%d-%b-%Y")
-        data["x"] = grouped["week"]
-        data["y"] = grouped["weekday"]
-        data["values"] = grouped[self.price]
+        data["week"] = zipped
+        data["weekday"] = grouped["weekday"]
+        data["value"] = grouped[self.price]
 
 
         # grouped = df.groupby(by=["Year", "Month"])
