@@ -14,3 +14,17 @@ class ColorMap(object):
         self.negative_color = self.contrary_color
 
         self.label_text_color = "#C5C5C5"
+
+        self.base_color_tints = [
+            "#19529c",
+            "#3063a6",
+            "#4775b0",
+            "#5e86ba",
+            "#7597c4",
+            "#8ca9ce",
+            "#a3bad7",
+            "#bacbe1",
+            "#d1dceb",
+            "#e8eef5"
+        ]
+

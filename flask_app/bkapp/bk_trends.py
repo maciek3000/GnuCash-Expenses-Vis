@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-from bokeh.models import ColumnDataSource, Circle, RadioGroup, FactorRange, LinearColorMapper
+import bokeh
+from bokeh.models import ColumnDataSource, Circle, RadioGroup, FactorRange, LinearColorMapper, FuncTickFormatter
 from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 from bokeh.layouts import row, column
@@ -21,7 +22,7 @@ class Trends(object):
     """
 
     heatmap_title = "Heatmap"
-    heatmap_radio_buttons = ["Transactions", "Price"]
+    heatmap_radio_buttons = ["Price", "Transactions"]
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname, month_format, color_mapping):
@@ -77,12 +78,24 @@ class Trends(object):
         # Heatmap
         # Heatmap
 
+        print(bokeh.__version__)
+
         self.original_expense_df = expense_dataframe
         self.current_expense_df = expense_dataframe
         self.months = unique_values_from_column(expense_dataframe, self.monthyear)
 
         self.initialize_gridplot()
         self.update_gridplot()
+
+        def callback(attr, old, new):
+            if new != old:
+                d = {
+                    0: False,
+                    1: True
+                }
+                self.__update_heatmap(d[new])
+
+        self.grid_elem_dict[self.g_heatmap_buttons].on_change("active", callback)
 
         grid = column(
             row(
@@ -150,7 +163,7 @@ class Trends(object):
 
     def __create_line_plot(self, source):
 
-        base_color = self.color_map.base_color
+        base_color = self.color_map.base_color_rgb
 
         p = figure(width=620, height=340, x_range=source.data["x"], toolbar_location="right", tools=["box_select"])
 
@@ -178,7 +191,9 @@ class Trends(object):
             "week": [0],
             "weekday": [0],
             "value": [0],
-            "date": [0]
+            "date": [0],
+            "price": [0],
+            "count": [0]
         }
 
         source = ColumnDataSource(
@@ -190,36 +205,57 @@ class Trends(object):
     def __create_heatmap(self, source):
 
 
-
-        grouped = [(x.split("-")[0], x.split("-")[1]) for x in self.months]
-
-
-        y_weekdays = [str(x) for x in range(6, -1, -1)]
+        y_weekdays = [str(x) for x in range(6, -1, -1)]  # there is always 7 days in a week
         x_weeks = list(map(lambda x: str(x), range(1, 53)))
 
-        rgb = self.color_map.base_color_rgb
-        palette = [(rgb[0], rgb[1], rgb[2], x) for x in np.linspace(0.5, 1.0, 5)]
-        print(palette)
-        palette = [(100, 100, 100), (200, 200, 200)]
-        # palette = ["#75968f", "#a5bab7", "#c9d9d3", "#e2e2e2", "#dfccce", "#ddb7b1", "#cc7878", "#933b41", "#550b1d"]
+        palette = list(reversed([self.color_map.base_color_tints[i] for i in range(0, 10, 2)]))
         cmap = LinearColorMapper(palette=palette, low=0, high=1)
+        cmap.low_color = "white"
 
         p = figure(
             height=280, width=1080,
             x_range=x_weeks, y_range=y_weekdays,
             x_axis_location="above",
-            tooltips=[("date", "@date"), ("price", "@value")]
+            tooltips=[("date", "@date"), ("price", "@price{0,0.00}"), ("count", "@count")],
+            toolbar_location=None
         )
 
         p.rect(
-            x="week", y="weekday", width=1, height=1,
+            x="week", y="weekday", width=1.01, height=0.55,
             source=source,  fill_color={
                 "field": "value", "transform": cmap
             },
             line_color=None
         )
 
+        p.axis.minor_tick_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.axis_line_color = "white"
+        p.axis.major_label_text_color = self.color_map.label_text_color
+        p.axis.major_label_text_font_size = "13px"
+
+        p.axis.group_text_color = self.color_map.label_text_color
+        p.axis.group_text_font_size = "13px"
+
+        p.yaxis.major_label_standoff = 25
+
+        weekday_mapper = {
+            0: "Mon",
+            1: "Tue",
+            2: "Wed",
+            3: "Thu",
+            4: "Fri",
+            5: "Sat",
+            6: "Sun"
+        }
+
+        weekday_formatter = FuncTickFormatter(args={"weekday_mapper": weekday_mapper}, code="""
+            return weekday_mapper[tick];
+        """)
+
+        p.yaxis.formatter = weekday_formatter
         self.heatmap_color_map = cmap
+
         return p
 
     # ========== Updating Grid Elements ========== #
@@ -244,36 +280,82 @@ class Trends(object):
         fig.y_range.start = 0
         fig.y_range.end = np.nanmax(new_values) + 0.01 * np.nanmax(new_values)
 
-    def __update_heatmap(self):
+    def __update_heatmap(self, count_agg=False):
 
         data = self.grid_source_dict[self.g_heatmap].data
         fig = self.grid_elem_dict[self.g_heatmap]
 
-        grouped = self.current_expense_df.groupby(by=[self.date]).sum().reset_index()
+        grouped_original = self.current_expense_df.groupby(by=[self.date])
+        grouped = grouped_original.sum().reset_index()
+        grouped = grouped.sort_values(by=[self.date], ascending=True)
         grouped["weekday"] = grouped[self.date].dt.weekday
-        grouped["month"] = grouped[self.date].dt.month.apply(lambda x: "{x:02d}".format(x=x))
+        grouped["month"] = grouped[self.date].dt.strftime("%b")  # month.apply(lambda x: "{x:02d}".format(x=x))
         grouped["year"] = grouped[self.date].dt.year.astype(str)
-        grouped["week"] = grouped[self.date].dt.weekofyear.apply(lambda x: "{x:02d}".format(x=x))
+        grouped["weeknumber"] = grouped[self.date].dt.week
+
+        start_date = grouped[grouped["weekday"] == 0][self.date].min()
+
+        grouped["week"] = (((grouped[self.date] - start_date) // 7).dt.days)
+        # grouped["week"] = grouped[self.date].dt.week
+        grouped["week"] = grouped["week"].apply(lambda x: "{x:04d}".format(x=x))
+
+        # print(grouped["timedelta"].head(15))
+
+
+        # grouped["week"] = grouped[self.date].dt.weekofyear.apply(lambda x: "{x:02d}".format(x=x))
 
         zipped = list(zip(grouped["year"].tolist(), grouped["week"].tolist()))
 
-        self.heatmap_color_map.high = grouped[self.price].max()
-        self.heatmap_color_map.low = 0
 
         zipped_range = sorted(list(set(zipped)))
 
         fig.x_range = FactorRange(*zipped_range)
+        fig.x_range.group_padding = 0
+        fig.x_range.range_padding = 0
 
         # df = self.current_expense_df.copy()
         # df["weekday"] = df[self.date].dt.weekday
         # df["Month"] = df[self.date].dt.month.apply(lambda x: "{x:02d}".format(x=x))
         # df["Year"] = df[self.date].dt.year.astype("str")
 
+        grouped_count = grouped_original.count()[self.price]
+
         data["year"] = grouped["year"]
         data["date"] = grouped[self.date].dt.strftime("%d-%b-%Y")
         data["week"] = zipped
-        data["weekday"] = grouped["weekday"]
-        data["value"] = grouped[self.price]
+        data["weekday"] = grouped["weekday"].astype(str)
+        data["price"] = grouped[self.price]
+        data["count"] = grouped_count
 
+        if count_agg:
+            data["value"] = grouped_count
+            high = grouped_count.max()
+            low = grouped_count.min()
+        else:
+            data["value"] = grouped[self.price]
+            high = grouped[self.price].max()
+            low = 0.01
+
+        self.heatmap_color_map.high = high
+        self.heatmap_color_map.low = low
+
+        # data["value"] = grouped[self.price]
+
+        week_month_df = grouped[grouped["weekday"] == 0]
+        g_week_month = week_month_df.groupby(by=["month"]).first()["week"].to_dict()
+        d = {item: key for key, item in g_week_month.items()}
+
+
+        formatter = FuncTickFormatter(args={"d": d}, code="""
+            var return_tick;
+            return_tick = "";
+            if (tick in d) {
+                console.log(tick);
+                return_tick = d[tick];
+            }
+            return return_tick;
+        """)
+
+        fig.xaxis.formatter = formatter
 
         # grouped = df.groupby(by=["Year", "Month"])
