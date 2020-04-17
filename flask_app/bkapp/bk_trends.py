@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import random
+import string
 
 import bokeh
 from bokeh.models import ColumnDataSource, Circle, RadioGroup, FactorRange, LinearColorMapper, FuncTickFormatter
@@ -48,7 +50,10 @@ class Trends(object):
 
         # State Variables
         self.months = None
-        self.heatmap_color_map = None
+
+        # Heatmap Variables
+        self.heatmap_color_mapper = None
+        self.heatmap_df_column_dict = None
 
         self.g_info_title = "Info Title"
         self.g_info_statistics = "Expenses Stats"
@@ -78,22 +83,17 @@ class Trends(object):
         # Heatmap
         # Heatmap
 
-        print(bokeh.__version__)
-
         self.original_expense_df = expense_dataframe
         self.current_expense_df = expense_dataframe
         self.months = unique_values_from_column(expense_dataframe, self.monthyear)
+        initial_heatmap_button_selected = 0
 
-        self.initialize_gridplot()
-        self.update_gridplot()
+        self.initialize_gridplot(initial_heatmap_button_selected)
+        self.update_gridplot(initial_heatmap_button_selected)
 
         def callback(attr, old, new):
             if new != old:
-                d = {
-                    0: False,
-                    1: True
-                }
-                self.__update_heatmap(d[new])
+                self.__update_heatmap_values(new)
 
         self.grid_elem_dict[self.g_heatmap_buttons].on_change("active", callback)
 
@@ -118,7 +118,7 @@ class Trends(object):
 
         return grid
 
-    def initialize_gridplot(self):
+    def initialize_gridplot(self, initial_heatmap_choice):
 
         elem_dict = {}
         source_dict = {}
@@ -130,7 +130,7 @@ class Trends(object):
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
 
         elem_dict[self.g_heatmap_title] = Div(text=self.heatmap_title)
-        elem_dict[self.g_heatmap_buttons] = RadioGroup(labels=self.heatmap_radio_buttons, active=0)
+        elem_dict[self.g_heatmap_buttons] = RadioGroup(labels=self.heatmap_radio_buttons, active=initial_heatmap_choice)
 
         source_dict[self.g_heatmap] = self.__create_heatmap_source()
         elem_dict[self.g_heatmap] = self.__create_heatmap(source_dict[self.g_heatmap])
@@ -138,10 +138,10 @@ class Trends(object):
         self.grid_elem_dict = elem_dict
         self.grid_source_dict = source_dict
 
-    def update_gridplot(self):
+    def update_gridplot(self, heatmap_choice):
         self.__update_info_stats()
         self.__update_line_plot()
-        self.__update_heatmap()
+        self.__update_heatmap(heatmap_choice)
 
     # ========== Creation of Grid Elements ========== #
 
@@ -254,7 +254,7 @@ class Trends(object):
         """)
 
         p.yaxis.formatter = weekday_formatter
-        self.heatmap_color_map = cmap
+        self.heatmap_color_mapper = cmap
 
         return p
 
@@ -280,82 +280,137 @@ class Trends(object):
         fig.y_range.start = 0
         fig.y_range.end = np.nanmax(new_values) + 0.01 * np.nanmax(new_values)
 
-    def __update_heatmap(self, count_agg=False):
+    def __update_heatmap(self, selected_index):
 
+        self.heatmap_df_column_dict = self.__create_new_column_names(self.current_expense_df.reset_index().columns)
+        aggregated = self.__aggregated_expense_df(self.current_expense_df)
+        week_to_month = self.__create_first_week_to_month_dict(aggregated)
+
+        column_names = self.heatmap_df_column_dict
         data = self.grid_source_dict[self.g_heatmap].data
         fig = self.grid_elem_dict[self.g_heatmap]
 
-        grouped_original = self.current_expense_df.groupby(by=[self.date])
-        grouped = grouped_original.sum().reset_index()
-        grouped = grouped.sort_values(by=[self.date], ascending=True)
-        grouped["weekday"] = grouped[self.date].dt.weekday
-        grouped["month"] = grouped[self.date].dt.strftime("%b")  # month.apply(lambda x: "{x:02d}".format(x=x))
-        grouped["year"] = grouped[self.date].dt.year.astype(str)
-        grouped["weeknumber"] = grouped[self.date].dt.week
+        # pd.Series as .unique() returns ndarray
+        x_range = pd.Series(aggregated[column_names["week_str"]].unique()).sort_values().tolist()
+        fig.x_range.factors = x_range
 
-        start_date = grouped[grouped["weekday"] == 0][self.date].min()
+        data["date"] = aggregated[column_names["date_str"]]
+        data["week"] = aggregated[column_names["week_str"]]
+        data["weekday"] = aggregated[column_names["weekday_str"]]
+        data["price"] = aggregated[self.price]
+        data["count"] = aggregated[column_names["count"]]
 
-        grouped["week"] = (((grouped[self.date] - start_date) // 7).dt.days)
-        # grouped["week"] = grouped[self.date].dt.week
-        grouped["week"] = grouped["week"].apply(lambda x: "{x:04d}".format(x=x))
+        self.__update_heatmap_values(selected_index)
 
-        # print(grouped["timedelta"].head(15))
+        func_tick_dict = self.__create_first_week_to_month_dict(aggregated)
 
-
-        # grouped["week"] = grouped[self.date].dt.weekofyear.apply(lambda x: "{x:02d}".format(x=x))
-
-        zipped = list(zip(grouped["year"].tolist(), grouped["week"].tolist()))
-
-
-        zipped_range = sorted(list(set(zipped)))
-
-        fig.x_range = FactorRange(*zipped_range)
-        fig.x_range.group_padding = 0
-        fig.x_range.range_padding = 0
-
-        # df = self.current_expense_df.copy()
-        # df["weekday"] = df[self.date].dt.weekday
-        # df["Month"] = df[self.date].dt.month.apply(lambda x: "{x:02d}".format(x=x))
-        # df["Year"] = df[self.date].dt.year.astype("str")
-
-        grouped_count = grouped_original.count()[self.price]
-
-        data["year"] = grouped["year"]
-        data["date"] = grouped[self.date].dt.strftime("%d-%b-%Y")
-        data["week"] = zipped
-        data["weekday"] = grouped["weekday"].astype(str)
-        data["price"] = grouped[self.price]
-        data["count"] = grouped_count
-
-        if count_agg:
-            data["value"] = grouped_count
-            high = grouped_count.max()
-            low = grouped_count.min()
-        else:
-            data["value"] = grouped[self.price]
-            high = grouped[self.price].max()
-            low = 0.01
-
-        self.heatmap_color_map.high = high
-        self.heatmap_color_map.low = low
-
-        # data["value"] = grouped[self.price]
-
-        week_month_df = grouped[grouped["weekday"] == 0]
-        g_week_month = week_month_df.groupby(by=["month"]).first()["week"].to_dict()
-        d = {item: key for key, item in g_week_month.items()}
-
-
-        formatter = FuncTickFormatter(args={"d": d}, code="""
-            var return_tick;
-            return_tick = "";
-            if (tick in d) {
-                console.log(tick);
-                return_tick = d[tick];
-            }
-            return return_tick;
-        """)
+        formatter = FuncTickFormatter(args={"d": func_tick_dict}, code="""
+                    var return_tick;
+                    return_tick = "";
+                    if (tick in d) {
+                        console.log(tick);
+                        return_tick = d[tick];
+                    }
+                    return return_tick;
+                """)
 
         fig.xaxis.formatter = formatter
 
-        # grouped = df.groupby(by=["Year", "Month"])
+    def __update_heatmap_values(self, selected_index):
+        # 0 - Price, 1 - Products
+        data = self.grid_source_dict[self.g_heatmap].data
+
+        if selected_index == 0:
+            values = data["price"]
+        elif selected_index == 1:
+            values = data["count"]
+        else:
+            raise Exception("How did I get here?")
+
+        high = values.max()
+        low = values.min()
+        data["value"] = values
+
+        self.heatmap_color_mapper.high = high
+        self.heatmap_color_mapper.low = low
+
+    def __create_new_column_names(self, columns, n=8):
+
+        default_col_names = {
+            "year": "year",
+            "year_str": "year_str",
+            "month": "month",
+            "month_str": "month_str",
+            "weekday": "weekday",
+            "weekday_str": "weekday_str",
+            "week": "week",
+            "week_str": "week_str",
+            "date_str": "date_str",
+            "count": "count"
+        }
+
+        for key, item in default_col_names.items():
+
+            new_value = item
+            while new_value in columns:
+                new_value = "".join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=n))
+
+            default_col_names[key] = new_value
+
+        return default_col_names
+
+    def __aggregated_expense_df(self, dataframe):
+
+        column_dict = self.heatmap_df_column_dict
+
+        agg = dataframe.groupby(by=[self.date])
+        agg_sum = agg.sum()
+        agg_count = agg.count()
+        agg_sum[column_dict["count"]] = agg_count[self.price]
+
+        aggregated = agg_sum.reset_index().sort_values(by=self.date, ascending=True)
+
+        aggregated[column_dict["year"]] = aggregated[self.date].dt.year
+        aggregated[column_dict["month"]] = aggregated[self.date].dt.month
+        aggregated[column_dict["weekday"]] = aggregated[self.date].dt.weekday
+
+        # string columns
+        aggregated[column_dict["year_str"]] = aggregated[column_dict["year"]].astype(str)
+        aggregated[column_dict["month_str"]] = aggregated[self.date].dt.strftime("%b")
+        aggregated[column_dict["weekday_str"]] = aggregated[column_dict["weekday"]].astype(str)
+        aggregated[column_dict["date_str"]] = aggregated[self.date].dt.strftime("%d-%b-%Y")
+
+        # first day is counted as the first Monday in the dataframe
+        start_date = aggregated[aggregated[column_dict["weekday"]] == 0][self.date].min()
+
+        # weeks are defined as the difference between first Monday and the date and then floor divided by 7
+        # there may be a week counted as -1, but it is not a problem
+        aggregated[column_dict["week"]] = ((aggregated[self.date] - start_date) // 7).dt.days
+
+        # padded to 4 digits to avoid sorting issues
+        # assuming regular year to have 52 weeks, df would have to have ~192 years of data to break sorting
+        aggregated[column_dict["week_str"]] = aggregated[column_dict["week"]].apply(lambda x: "{x:04d}".format(x=x))
+
+        return aggregated
+
+    def __create_first_week_to_month_dict(self, agg):
+        column_dict = self.heatmap_df_column_dict
+
+        monday_agg = agg[agg[column_dict["weekday"]] == 0]
+        year_month_agg = monday_agg.groupby(column_dict["year_str"]).first()[
+            column_dict["month"]].reset_index().set_index(column_dict["month"])
+
+        month_agg = monday_agg.groupby(column_dict["month"]).first()[
+            [column_dict["week_str"], column_dict["month_str"]]]
+
+        month_agg[column_dict["year_str"]] = year_month_agg
+
+        func = lambda x: x[column_dict["month_str"]] if pd.isna(x[column_dict["year_str"]]) else "({}) {}".format(
+                x[column_dict["year_str"]], x[column_dict["month_str"]])
+
+        month_agg[column_dict["month_str"]] = month_agg.apply(func, axis=1)
+
+        month_to_week_dict = month_agg.set_index(column_dict["month_str"])[column_dict["week_str"]].to_dict()
+        week_to_month_dict = {item: key for key, item in month_to_week_dict.items()}
+
+        return week_to_month_dict
