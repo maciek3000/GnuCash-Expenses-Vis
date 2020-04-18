@@ -235,7 +235,7 @@ class Trends(object):
         p = figure(width=340, height=340, title=self.histogram_title, toolbar_location=None, tools=[""])
 
         p.quad(left=0, right="hist", top="top_edges", bottom="bottom_edges",
-               source=source, fill_color=self.color_map.link_text_color, line_color=self.color_map.link_text_color,)
+               source=source, fill_color=self.color_map.link_text_color, line_color=None)#self.color_map.link_text_color,)
 
         p.title.text_color = self.color_map.label_text_color
         p.title.text_font_size = "16px"
@@ -361,9 +361,17 @@ class Trends(object):
 
         source = self.grid_source_dict[self.g_histogram]
 
-        source.data["hist"] = hist
-        source.data["top_edges"] = edges[:-1]
-        source.data["bottom_edges"] = edges[1:]
+        new_values = {
+            "hist": hist,
+            "top_edges": edges[:-1],
+            "bottom_edges": edges[1:]
+        }
+
+        source.data.update(new_values)
+
+        # source.data["hist"] = hist
+        # source.data["top_edges"] = edges[:-1]
+        # source.data["bottom_edges"] = edges[1:]
 
 
     def __update_heatmap(self, selected_index):
@@ -380,11 +388,24 @@ class Trends(object):
         x_range = pd.Series(aggregated[column_names["week_str"]].unique()).sort_values().tolist()
         fig.x_range.factors = x_range
 
-        data["date"] = aggregated[column_names["date_str"]]
-        data["week"] = aggregated[column_names["week_str"]]
-        data["weekday"] = aggregated[column_names["weekday_str"]]
-        data["price"] = aggregated[self.price]
-        data["count"] = aggregated[column_names["count"]]
+        temp_values = [0] * len(aggregated[self.price])
+
+        new_values = {
+            "date": aggregated[column_names["date_str"]],
+            "week": aggregated[column_names["week_str"]],
+            "weekday": aggregated[column_names["weekday_str"]],
+            "price": aggregated[self.price],
+            "count": aggregated[column_names["count"]],
+            "value": temp_values  # performed to not trigger ColumnDataSource warning over unmatched columns
+        }
+
+        data.update(new_values)
+
+        # data["date"] = aggregated[column_names["date_str"]]
+        # data["week"] = aggregated[column_names["week_str"]]
+        # data["weekday"] = aggregated[column_names["weekday_str"]]
+        # data["price"] = aggregated[self.price]
+        # data["count"] = aggregated[column_names["count"]]
 
         self.__update_heatmap_values(selected_index)
 

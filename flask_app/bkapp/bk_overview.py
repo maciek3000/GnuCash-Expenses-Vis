@@ -624,8 +624,13 @@ class Overview(object):
 
         fig.x_range.factors = agg_df[self.category].tolist()
 
-        source.data["x"] = agg_df[self.category]
-        source.data["top"] = agg_df[self.price]
+        new_data = {
+            "x": agg_df[self.category],
+            "top": agg_df[self.price]
+        }
+
+        source.data.update(new_data)
+
 
         if len(agg_df[self.category]) >= 25:
             formatter = FuncTickFormatter(code="""
