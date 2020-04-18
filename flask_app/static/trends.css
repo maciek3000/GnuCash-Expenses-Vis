@@ -9,9 +9,6 @@
     width: 100% !important;
 }
 
-.bk.second_row {
-    width: 100% !important;
-}
 
 .bk.first_row > div:last-child {
     left: 70% !important;
@@ -47,5 +44,27 @@
     color: var(--contrary-color);
 }
 
+#hover_line_plot span:first-child {
+    color: var(--contrary-color);
+}
+
+.bk.second_row {
+    width: 100% !important;
+}
 
 
+.bk.heatmap_title {
+    font-size: 2em;
+    color: var(--base-color);
+    font-weight: bold;
+    width: 100% !important;
+}
+
+.bk.heatmap_radio_buttons .bk-input-group label span {
+    font-size: 1.3em;
+    color: var(--gray-title);
+}
+
+#hover_heatmap {
+    font-size: 1em;
+}

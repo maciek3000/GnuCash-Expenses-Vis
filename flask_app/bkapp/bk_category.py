@@ -4,7 +4,7 @@ from datetime import datetime
 
 from .pandas_functions import unique_values_from_column
 
-from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, Circle
+from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, NumberFormatter, Circle, Label
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
@@ -93,6 +93,8 @@ class Category(object):
             </div>
         </div>
     """
+
+    interaction_message = "Select MonthPoints on the Plot to interact with the Dashboard"
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname, month_format, color_mapping):
@@ -348,7 +350,7 @@ class Category(object):
         base_color = self.color_map.base_color
 
         p = figure(width=550, height=400, x_range=cds.data["x"], y_range=[0, 10], tooltips=self.line_plot_tooltip,
-                   toolbar_location="right", tools=['box_select'])
+                   toolbar_location=None, tools=["box_select"])
         p.line(x="x", y="y", source=cds, color=base_color, line_width=5, )
 
         scatter = p.circle(x="x", y="y", source=cds, color=base_color, size=4)
@@ -358,6 +360,14 @@ class Category(object):
 
         scatter.selection_glyph = selected_circle
         scatter.nonselection_glyph = nonselected_circle
+
+        info_label = Label(x=5, y=5, x_units="screen", y_units="screen",
+                           text=self.interaction_message,
+                           render_mode="css",
+                           text_color=self.color_map.background_gray, text_font_size="12px",
+                           text_font_style="italic")
+
+        p.add_layout(info_label)
 
         p.axis.minor_tick_line_color = None
         p.axis.major_tick_line_color = None
@@ -442,7 +452,8 @@ class Category(object):
                 - .shop
             Those attributes correspond to column names in .original_df and it's derivatives. Created DataTable will
             show details of those 4 columns for every transaction necessary. Additionally, .date field will be
-            formatted to %d-%m-%Y format (31-01-2019).
+            formatted to %d-%m-%Y format (31-01-2019) and .price field will be formatted into 0,0.00 format
+            (1,897.34).
 
             DataTable has it's index (counter) column removed for clarity.
 
@@ -451,7 +462,7 @@ class Category(object):
         columns = [
             TableColumn(field=self.date, title="Date", formatter=DateFormatter(format="%d-%m-%Y")),
             TableColumn(field=self.product, title="Product"),
-            TableColumn(field=self.price, title="Price"),
+            TableColumn(field=self.price, title="Price", formatter=NumberFormatter(format="0,0.00")),
             TableColumn(field=self.shop, title="Shop")
         ]
 

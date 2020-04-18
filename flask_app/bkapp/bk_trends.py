@@ -4,8 +4,9 @@ from datetime import datetime
 import random
 import string
 
-import bokeh
-from bokeh.models import ColumnDataSource, Circle, RadioGroup, FactorRange, LinearColorMapper, FuncTickFormatter
+from bokeh.models import ColumnDataSource, Circle, RadioGroup, LinearColorMapper, FuncTickFormatter, \
+    NumeralTickFormatter, ColorBar, PrintfTickFormatter, BasicTicker, Label
+
 from bokeh.models.widgets import Div
 from bokeh.plotting import figure
 from bokeh.layouts import row, column
@@ -17,18 +18,50 @@ class Trends(object):
     monthly_title = "Monthly"
     daily_title = "Daily"
     stats_template = """
-    <div>Average: <span>{mean:.2f}</span></div>
-    <div>Median: <span>{median:.2f}</span></div>
-    <div>Minimum: <span>{min:.2f}</span></div>
-    <div>Maximum: <span>{max:.2f}</span></div>
-    <div>Standard Deviation: <span>{std:.2f}</span></div>
+    <div>Average: <span>{mean:,.2f}</span></div>
+    <div>Median: <span>{median:,.2f}</span></div>
+    <div>Minimum: <span>{min:,.2f}</span></div>
+    <div>Maximum: <span>{max:,.2f}</span></div>
+    <div>Standard Deviation: <span>{std:,.2f}</span></div>
     """
 
     line_plot_title = "Monthly Expenses"
     histogram_title ="Daily Expenses Histogram"
 
     heatmap_title = "Heatmap"
-    heatmap_radio_buttons = ["Price", "Transactions"]
+    heatmap_radio_buttons = ["Price", "# of Products"]
+
+    line_plot_tooltip = """
+        <div class="hover_tooltip" id="hover_line_plot">
+            <div>
+                <span>Month: </span>
+                <span>@x</span>
+            </div>
+            <div>
+                <span>Value: </span>
+                <span>@y{0.00}</span>
+            </div>
+        </div>
+    """
+
+    heatmap_plot_tooltip = """
+        <div class="hover_tooltip" id="hover_heatmap">
+            <div>
+                <span>Date: </span>
+                <span>@date</span>
+            </div>
+            <div>
+                <span>Price: </span>
+                <span>@price{0,0.00}</span>
+            </div>
+            <div>
+                <span># of Products: </span>
+                <span>@count</span>
+            </div>
+        </div>
+    """
+
+    interaction_message = "Select MonthPoints on the Plot to interact with the Dashboard"
 
     def __init__(self, category_colname, monthyear_colname, price_colname, product_colname,
                  date_colname, currency_colname, shop_colname, month_format, color_mapping):
@@ -54,10 +87,12 @@ class Trends(object):
 
         # State Variables
         self.months = None
+        self.chosen_months = None
 
         # Heatmap Variables
         self.heatmap_color_mapper = None
         self.heatmap_df_column_dict = None
+
 
         self.g_monthly_title = "Monthly Title"
         self.g_monthly_statistics = "Monthly Stats"
@@ -93,16 +128,29 @@ class Trends(object):
         self.original_expense_df = expense_dataframe
         self.current_expense_df = expense_dataframe
         self.months = unique_values_from_column(expense_dataframe, self.monthyear)
+        self.chosen_months = self.months  # initially all months are selected
+
+
         initial_heatmap_button_selected = 0
 
         self.initialize_gridplot(initial_heatmap_button_selected)
         self.update_gridplot(initial_heatmap_button_selected)
 
-        def callback(attr, old, new):
+        def heatmap_aggregation_callback(attr, old, new):
             if new != old:
                 self.__update_heatmap_values(new)
 
-        self.grid_elem_dict[self.g_heatmap_buttons].on_change("active", callback)
+        self.grid_elem_dict[self.g_heatmap_buttons].on_change("active", heatmap_aggregation_callback)
+
+        def line_plot_selection_callback(attr, old, new):
+            new_indices = set(new)
+            old_indices = set(old)
+
+            if new_indices != old_indices:
+                self.__update_chosen_months(new_indices)
+                self.update_gridplot()
+
+        self.grid_source_dict[self.g_line_plot].selected.on_change("indices", line_plot_selection_callback)
 
         grid = column(
             row(
@@ -125,7 +173,7 @@ class Trends(object):
                 column(
                     self.grid_elem_dict[self.g_heatmap_title],
                     self.grid_elem_dict[self.g_heatmap_buttons],
-                    self.grid_elem_dict[self.g_heatmap]
+                    self.grid_elem_dict[self.g_heatmap],
                 ),
                 css_classes=["second_row"]
             )
@@ -156,8 +204,9 @@ class Trends(object):
         source_dict[self.g_histogram] = self.__create_histogram_source()
         elem_dict[self.g_histogram] = self.__create_histogram(source_dict[self.g_histogram])
 
-        elem_dict[self.g_heatmap_title] = Div(text=self.heatmap_title)
-        elem_dict[self.g_heatmap_buttons] = RadioGroup(labels=self.heatmap_radio_buttons, active=initial_heatmap_choice)
+        elem_dict[self.g_heatmap_title] = Div(text=self.heatmap_title, css_classes=["heatmap_title"])
+        elem_dict[self.g_heatmap_buttons] = RadioGroup(labels=self.heatmap_radio_buttons, active=initial_heatmap_choice,
+                                                       css_classes=["heatmap_radio_buttons"], inline=True)
 
         source_dict[self.g_heatmap] = self.__create_heatmap_source()
         elem_dict[self.g_heatmap] = self.__create_heatmap(source_dict[self.g_heatmap])
@@ -165,7 +214,8 @@ class Trends(object):
         self.grid_elem_dict = elem_dict
         self.grid_source_dict = source_dict
 
-    def update_gridplot(self, heatmap_choice):
+    def update_gridplot(self, heatmap_choice=0):
+        self.__update_current_expense_df()
         self.__update_info()
         self.__update_line_plot()
         self.__update_histogram()
@@ -194,7 +244,7 @@ class Trends(object):
         base_color = self.color_map.contrary_color
 
         p = figure(width=540, height=340, x_range=source.data["x"], toolbar_location=None, tools=["box_select"],
-                   title=self.line_plot_title)
+                   title=self.line_plot_title, tooltips=self.line_plot_tooltip)
 
         p.line(x="x", y="y", source=source, line_width=5, color=base_color)
         scatter = p.circle(x="x", y="y", source=source, color=base_color)
@@ -208,6 +258,14 @@ class Trends(object):
         p.title.text_color = self.color_map.label_text_color
         p.title.text_font_size = "16px"
 
+        info_label = Label(x=180, y=260, x_units="screen", y_units="screen",
+                           text=self.interaction_message,
+                           render_mode="css",
+                           text_color=self.color_map.background_gray, text_font_size="12px",
+                           text_font_style="italic")
+
+        p.add_layout(info_label)
+
         p.axis.minor_tick_line_color = None
         p.axis.major_tick_line_color = None
         p.axis.axis_line_color = self.color_map.background_gray
@@ -215,6 +273,7 @@ class Trends(object):
         p.axis.major_label_text_font_size = "13px"
         p.xaxis.major_label_orientation = 0.785  # 45 degrees in radians
 
+        p.yaxis.formatter = NumeralTickFormatter(format="0,0.00")
 
         return p
 
@@ -232,10 +291,13 @@ class Trends(object):
 
     def __create_histogram(self, source):
 
-        p = figure(width=340, height=340, title=self.histogram_title, toolbar_location=None, tools=[""])
+        p = figure(width=260, height=340, title=self.histogram_title, toolbar_location=None,
+                   tools=[""])
 
         p.quad(left=0, right="hist", top="top_edges", bottom="bottom_edges",
-               source=source, fill_color=self.color_map.link_text_color, line_color=None)#self.color_map.link_text_color,)
+               source=source, fill_color=self.color_map.link_text_color,
+               line_color=self.color_map.link_text_color)
+
 
         p.title.text_color = self.color_map.label_text_color
         p.title.text_font_size = "16px"
@@ -246,6 +308,8 @@ class Trends(object):
         p.axis.axis_line_color = self.color_map.background_gray
         p.axis.major_label_text_color = self.color_map.label_text_color
         p.axis.major_label_text_font_size = "13px"
+
+        p.yaxis.formatter = NumeralTickFormatter(format="0,0.00")
 
         return p
 
@@ -277,15 +341,15 @@ class Trends(object):
         cmap.low_color = "white"
 
         p = figure(
-            height=280, width=1080,
+            height=180, width=1200,
             x_range=x_weeks, y_range=y_weekdays,
             x_axis_location="above",
-            tooltips=[("date", "@date"), ("price", "@price{0,0.00}"), ("count", "@count")],
+            tooltips=self.heatmap_plot_tooltip,
             toolbar_location=None
         )
 
         p.rect(
-            x="week", y="weekday", width=1.01, height=0.55,
+            x="week", y="weekday", width=1, height=1,
             source=source,  fill_color={
                 "field": "value", "transform": cmap
             },
@@ -318,11 +382,30 @@ class Trends(object):
         """)
 
         p.yaxis.formatter = weekday_formatter
+
         self.heatmap_color_mapper = cmap
+
+        color_bar = ColorBar(color_mapper=cmap, ticker=BasicTicker(desired_num_ticks=len(palette)),
+                             formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
+                             location=(0, 0),
+                             major_label_text_font_size="12px", major_label_text_color=self.color_map.text_color)
+
+        p.add_layout(color_bar, "right")
 
         return p
 
     # ========== Updating Grid Elements ========== #
+
+    def __update_chosen_months(self, indices):
+
+        if len(indices) == 0:
+            self.chosen_months = self.months
+        else:
+            self.chosen_months = [self.months[i] for i in indices]
+
+    def __update_current_expense_df(self):
+        self.current_expense_df = self.original_expense_df[self.original_expense_df[
+            self.monthyear].isin(self.chosen_months)]
 
     def __update_info(self):
 
@@ -347,7 +430,7 @@ class Trends(object):
 
     def __update_line_plot(self):
 
-        new_values = self.current_expense_df.groupby(by=[self.monthyear]).sum()[self.price].tolist()
+        new_values = self.original_expense_df.groupby(by=[self.monthyear]).sum()[self.price].tolist()
 
         source = self.grid_source_dict[self.g_line_plot]
         source.data["y"] = new_values
@@ -376,9 +459,13 @@ class Trends(object):
 
     def __update_heatmap(self, selected_index):
 
-        self.heatmap_df_column_dict = self.__create_new_column_names(self.current_expense_df.reset_index().columns)
-        aggregated = self.__aggregated_expense_df(self.current_expense_df)
-        week_to_month = self.__create_first_week_to_month_dict(aggregated)
+        # heatmap shouldn't be responsive to Month Selection
+        # or should it be?
+
+        df = self.original_expense_df
+
+        self.heatmap_df_column_dict = self.__create_new_column_names(df.reset_index().columns)
+        aggregated = self.__aggregated_expense_df(df)
 
         column_names = self.heatmap_df_column_dict
         data = self.grid_source_dict[self.g_heatmap].data
@@ -428,12 +515,13 @@ class Trends(object):
 
         if selected_index == 0:
             values = data["price"]
+            high = values.mean() + (3 * values.std())  # see docstring
         elif selected_index == 1:
             values = data["count"]
+            high = values.max()
         else:
             raise Exception("How did I get here?")
 
-        high = values.max()
         low = values.min()
         data["value"] = values
 
