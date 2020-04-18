@@ -2,11 +2,14 @@
 
 :root {
     --base-color: #19529c;
+    --contrary-color: #9c2b19;
     --normal-text-color: #8C8C8C;
     --normal-link-color: #8CA8CD;
     --hover-link-color: white;
     --background-link-color: #5E85B9;
     --settings-link-color: #c6d4e6;
+    --gray-title: #808080;
+    --light-gray: #DCDCDC;
 }
 
 * {

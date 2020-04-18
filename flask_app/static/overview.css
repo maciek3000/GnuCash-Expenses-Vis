@@ -1,16 +1,8 @@
-:root {
-    --base-color: #19529c;
-    --contrary-color: #9c2b19;
-    --normal-text-color: #8C8C8C;
-    --normal-link-color: #8CA8CD;
-    --background-link-color: #5E85B9;
-    --light-gray: #DCDCDC;
-}
-
 .bk.title_row {
     width: 100% !important;
     font-size: 3em;
     color: var(--base-color);
+    padding-bottom: 8px;
 }
 
 .bk.title_row > div {
@@ -87,8 +79,9 @@
 
 .bk.info_element:first-child, .bk.info_element:nth-child(2) {
     text-align: center;
-    color: black;
-    opacity: 0.8;
+    color: var(--gray-title);
+/*    color: black;
+    opacity: 0.8; */
 }
 
 

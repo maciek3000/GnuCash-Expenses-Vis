@@ -14,16 +14,17 @@ from .pandas_functions import unique_values_from_column
 
 class Trends(object):
 
-    info_title = "Expenses Info"
-    info_stats = """
+    monthly_title = "Monthly"
+    daily_title = "Daily"
+    stats_template = """
     <div>Average: <span>{mean:.2f}</span></div>
     <div>Median: <span>{median:.2f}</span></div>
     <div>Minimum: <span>{min:.2f}</span></div>
     <div>Maximum: <span>{max:.2f}</span></div>
-    <div>Standard Deviation <span>{std:.2f}</span></div>
+    <div>Standard Deviation: <span>{std:.2f}</span></div>
     """
 
-    line_plot_title = "Average Expenses"
+    line_plot_title = "Monthly Expenses"
     histogram_title ="Daily Expenses Histogram"
 
     heatmap_title = "Heatmap"
@@ -58,8 +59,10 @@ class Trends(object):
         self.heatmap_color_mapper = None
         self.heatmap_df_column_dict = None
 
-        self.g_info_title = "Info Title"
-        self.g_info_statistics = "Expenses Stats"
+        self.g_monthly_title = "Monthly Title"
+        self.g_monthly_statistics = "Monthly Stats"
+        self.g_daily_title = "Daily Title"
+        self.g_daily_statistics = "Daily Stats"
         self.g_line_plot = "Line Plot"
         self.g_histogram = "Density Plot"
         self.g_heatmap_title = "Heatmap Title"
@@ -104,22 +107,27 @@ class Trends(object):
         grid = column(
             row(
                 column(
-                    self.grid_elem_dict[self.g_info_title],
-                    self.grid_elem_dict[self.g_info_statistics]
+                    self.grid_elem_dict[self.g_monthly_title],
+                    self.grid_elem_dict[self.g_monthly_statistics],
+                    self.grid_elem_dict[self.g_daily_title],
+                    self.grid_elem_dict[self.g_daily_statistics],
+                    css_classes=["info_column"]
                 ),
                 column(
                     row(
                         self.grid_elem_dict[self.g_line_plot],
                         self.grid_elem_dict[self.g_histogram]
                     )
-                )
+                ),
+                css_classes=["first_row"]
             ),
             row(
                 column(
                     self.grid_elem_dict[self.g_heatmap_title],
                     self.grid_elem_dict[self.g_heatmap_buttons],
                     self.grid_elem_dict[self.g_heatmap]
-                )
+                ),
+                css_classes=["second_row"]
             )
         )
 
@@ -130,8 +138,17 @@ class Trends(object):
         elem_dict = {}
         source_dict = {}
 
-        elem_dict[self.g_info_title] = Div(text=self.info_title)
-        elem_dict[self.g_info_statistics] = Div(text=self.info_stats)
+        info_title_elem_css = "info_title"
+        info_elem_css = "info_element"
+        monthly_css = "monthly_class"
+
+        elem_dict[self.g_monthly_title] = Div(text=self.monthly_title, css_classes=[
+            info_title_elem_css, info_elem_css, monthly_css])
+        elem_dict[self.g_monthly_statistics] = Div(text=self.stats_template, css_classes=[
+            info_elem_css, monthly_css])
+
+        elem_dict[self.g_daily_title] = Div(text=self.daily_title, css_classes=[info_title_elem_css, info_elem_css])
+        elem_dict[self.g_daily_statistics] = Div(text=self.stats_template, css_classes=[info_elem_css])
 
         source_dict[self.g_line_plot] = self.__create_line_plot_source()
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
@@ -149,7 +166,7 @@ class Trends(object):
         self.grid_source_dict = source_dict
 
     def update_gridplot(self, heatmap_choice):
-        self.__update_info_stats()
+        self.__update_info()
         self.__update_line_plot()
         self.__update_histogram()
         self.__update_heatmap(heatmap_choice)
@@ -176,7 +193,8 @@ class Trends(object):
 
         base_color = self.color_map.contrary_color
 
-        p = figure(width=620, height=340, x_range=source.data["x"], toolbar_location=None, tools=["box_select"])
+        p = figure(width=540, height=340, x_range=source.data["x"], toolbar_location=None, tools=["box_select"],
+                   title=self.line_plot_title)
 
         p.line(x="x", y="y", source=source, line_width=5, color=base_color)
         scatter = p.circle(x="x", y="y", source=source, color=base_color)
@@ -187,12 +205,16 @@ class Trends(object):
         scatter.selection_glyph = selected_circle
         scatter.nonselection_glyph = nonselected_circle
 
+        p.title.text_color = self.color_map.label_text_color
+        p.title.text_font_size = "16px"
+
         p.axis.minor_tick_line_color = None
         p.axis.major_tick_line_color = None
         p.axis.axis_line_color = self.color_map.background_gray
         p.axis.major_label_text_color = self.color_map.label_text_color
         p.axis.major_label_text_font_size = "13px"
         p.xaxis.major_label_orientation = 0.785  # 45 degrees in radians
+
 
         return p
 
@@ -210,10 +232,13 @@ class Trends(object):
 
     def __create_histogram(self, source):
 
-        p = figure(width=340, height=340)
+        p = figure(width=340, height=340, title=self.histogram_title, toolbar_location=None, tools=[""])
 
         p.quad(left=0, right="hist", top="top_edges", bottom="bottom_edges",
-               source=source, fill_color=self.color_map.link_text_color, line_color=self.color_map.base_color)
+               source=source, fill_color=self.color_map.link_text_color, line_color=self.color_map.link_text_color,)
+
+        p.title.text_color = self.color_map.label_text_color
+        p.title.text_font_size = "16px"
 
         p.axis.major_tick_line_color = None
         p.axis.minor_tick_line_color = None
@@ -299,14 +324,26 @@ class Trends(object):
 
     # ========== Updating Grid Elements ========== #
 
-    def __update_info_stats(self):
+    def __update_info(self):
 
+        self.__update_monthly_info()
+        self.__update_daily_info()
+
+    def __update_monthly_info(self):
         stats = self.current_expense_df.groupby(by=[self.monthyear]).sum()[self.price].describe()
         stats["median"] = stats["50%"]
 
-        new_text = self.info_stats.format(**stats)
+        new_text = self.stats_template.format(**stats)
 
-        self.grid_elem_dict[self.g_info_statistics].text = new_text
+        self.grid_elem_dict[self.g_monthly_statistics].text = new_text
+
+    def __update_daily_info(self):
+        stats = self.current_expense_df[self.price].describe()
+        stats["median"] = stats["50%"]
+
+        new_text = self.stats_template.format(**stats)
+
+        self.grid_elem_dict[self.g_daily_statistics].text = new_text
 
     def __update_line_plot(self):
 
@@ -357,7 +394,6 @@ class Trends(object):
                     var return_tick;
                     return_tick = "";
                     if (tick in d) {
-                        console.log(tick);
                         return_tick = d[tick];
                     }
                     return return_tick;

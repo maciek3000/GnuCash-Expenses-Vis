@@ -1,12 +1,15 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='trends.css') }}">
 {% extends 'base.html' %}
 
 {% block title %}Trends{% endblock %}
 
 {% block content %}
-<div class="title">
-    <h1>Trends</h1>
-</div>
 <div class="content-container">
-    {{script|safe}}
+    <div class="title">
+        Trends
+    </div>
+    <div>
+        {{script|safe}}
+    </div>
 </div>
 {% endblock %}

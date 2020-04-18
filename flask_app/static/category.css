@@ -1,10 +1,28 @@
-:root {
-    --base-color: #19529c;
-    --contrary-color: #9c2b19;
-    --normal-text-color: #8C8C8C;
-    --normal-link-color: #8CA8CD;
-    --background-link-color: #5E85B9;
-    --light-gray: #DCDCDC;
+.bk.first_row {
+    width: 100% !important;
+}
+
+.bk.category_title {
+    width: 100% !important;
+}
+
+.bk.category_title {
+    text-align: left;
+    color: var(--base-color);
+    font-size: 3em;
+    padding-bottom: 8px;
+}
+
+.bk.second_row {
+    width: 100% !important;
+}
+
+.bk.second_row > div:last-child {
+    left: 50% !important;
+}
+
+.bk.second_row > div:nth-child(2) {
+    left: 25% !important;
 }
 
 .statistics_table table {
@@ -51,33 +69,6 @@
     text-align: left;
     padding-left: 4px;
     font-weight: bold;
-}
-
-.bk.first_row {
-    width: 100% !important;
-}
-
-.bk.category_title {
-    width: 100% !important;
-}
-
-.bk.category_title {
-    text-align: left;
-    color: var(--base-color);
-    font-size: 3em;
-    padding-bottom: 8px;
-}
-
-.bk.second_row {
-    width: 100% !important;
-}
-
-.bk.second_row > div:last-child {
-    left: 50% !important;
-}
-
-.bk.second_row > div:nth-child(2) {
-    left: 25% !important;
 }
 
 .bk.bk-input {

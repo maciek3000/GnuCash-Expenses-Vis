@@ -1,0 +1,51 @@
+.title {
+    color: var(--base-color);
+    font-size: 3em;
+    width: 100%;
+    padding-bottom: 8px;
+}
+
+.bk.first_row {
+    width: 100% !important;
+}
+
+.bk.second_row {
+    width: 100% !important;
+}
+
+.bk.first_row > div:last-child {
+    left: 70% !important;
+}
+
+.bk.first_row > div:nth-child(2) {
+    left: 25% !important;
+}
+
+.bk.info_column {
+    width: 100% !important;
+}
+
+.bk.info_title {
+    font-size: 2em !important;
+}
+
+.bk.info_element div {
+    width: 100% !important;
+}
+
+.bk.info_element span {
+    float: right;
+}
+
+.bk.info_title, .bk.info_element span {
+    color: var(--normal-link-color);
+    opacity: 1;
+    font-weight: bold;
+}
+
+.bk.monthly_class.info_title, .bk.monthly_class span {
+    color: var(--contrary-color);
+}
+
+
+

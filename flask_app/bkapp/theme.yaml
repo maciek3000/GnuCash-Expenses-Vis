@@ -11,4 +11,7 @@ attrs:
     major_label_text_font: "Lato"
     axis_label_text_font: "Lato"
 
+  Title:
+    text_font: "Lato"
+
 
