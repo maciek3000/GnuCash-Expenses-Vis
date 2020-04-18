@@ -23,6 +23,9 @@ class Trends(object):
     <div>Standard Deviation <span>{std:.2f}</span></div>
     """
 
+    line_plot_title = "Average Expenses"
+    histogram_title ="Daily Expenses Histogram"
+
     heatmap_title = "Heatmap"
     heatmap_radio_buttons = ["Price", "Transactions"]
 
@@ -58,7 +61,7 @@ class Trends(object):
         self.g_info_title = "Info Title"
         self.g_info_statistics = "Expenses Stats"
         self.g_line_plot = "Line Plot"
-        self.g_density_plot = "Density Plot"
+        self.g_histogram = "Density Plot"
         self.g_heatmap_title = "Heatmap Title"
         self.g_heatmap_buttons = "Heatmap Buttons"
         self.g_heatmap = "Heatmap"
@@ -107,7 +110,7 @@ class Trends(object):
                 column(
                     row(
                         self.grid_elem_dict[self.g_line_plot],
-                        self.grid_elem_dict[self.g_density_plot]
+                        self.grid_elem_dict[self.g_histogram]
                     )
                 )
             ),
@@ -133,8 +136,8 @@ class Trends(object):
         source_dict[self.g_line_plot] = self.__create_line_plot_source()
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
 
-        source_dict[self.g_density_plot] = self.__create_density_plot_source()
-        elem_dict[self.g_density_plot] = self.__create_density_plot(source_dict[self.g_density_plot])
+        source_dict[self.g_histogram] = self.__create_histogram_source()
+        elem_dict[self.g_histogram] = self.__create_histogram(source_dict[self.g_histogram])
 
         elem_dict[self.g_heatmap_title] = Div(text=self.heatmap_title)
         elem_dict[self.g_heatmap_buttons] = RadioGroup(labels=self.heatmap_radio_buttons, active=initial_heatmap_choice)
@@ -148,7 +151,7 @@ class Trends(object):
     def update_gridplot(self, heatmap_choice):
         self.__update_info_stats()
         self.__update_line_plot()
-        self.__update_density_plot()
+        self.__update_histogram()
         self.__update_heatmap(heatmap_choice)
 
     # ========== Creation of Grid Elements ========== #
@@ -171,7 +174,7 @@ class Trends(object):
 
     def __create_line_plot(self, source):
 
-        base_color = self.color_map.base_color_rgb
+        base_color = self.color_map.contrary_color
 
         p = figure(width=620, height=340, x_range=source.data["x"], toolbar_location=None, tools=["box_select"])
 
@@ -193,26 +196,31 @@ class Trends(object):
 
         return p
 
-    def __create_density_plot_source(self):
+    def __create_histogram_source(self):
 
         data = {
             "hist": [0],
             "top_edges": [0],
-            "bottom_edges": [0]
+            "bottom_edges": [0],
         }
 
         source = ColumnDataSource(data=data)
 
         return source
 
-    def __create_density_plot(self, source):
+    def __create_histogram(self, source):
 
-        p = figure(width=180, height=340)
+        p = figure(width=340, height=340)
 
-        #p.line(x="values", y="bins", source=source)
-        #p.hbar(y="bins", height=0.1, right="values", left=0, source=source)
+        p.quad(left=0, right="hist", top="top_edges", bottom="bottom_edges",
+               source=source, fill_color=self.color_map.link_text_color, line_color=self.color_map.base_color)
 
-        p.quad(left=0, right="hist", top="top_edges", bottom="bottom_edges", source=source, fill_color="blue")
+        p.axis.major_tick_line_color = None
+        p.axis.minor_tick_line_color = None
+        p.xaxis.visible = False
+        p.axis.axis_line_color = self.color_map.background_gray
+        p.axis.major_label_text_color = self.color_map.label_text_color
+        p.axis.major_label_text_font_size = "13px"
 
         return p
 
@@ -311,17 +319,14 @@ class Trends(object):
         fig.y_range.start = 0
         fig.y_range.end = np.nanmax(new_values) + 0.01 * np.nanmax(new_values)
 
-    def __update_density_plot(self):
+    def __update_histogram(self):
         hist, edges = np.histogram(self.current_expense_df[self.price], density=True, bins=50)
 
-        source = self.grid_source_dict[self.g_density_plot]
-        fig = self.grid_elem_dict[self.g_density_plot]
+        source = self.grid_source_dict[self.g_histogram]
 
         source.data["hist"] = hist
         source.data["top_edges"] = edges[:-1]
         source.data["bottom_edges"] = edges[1:]
-
-        # fig.y_range.factors = hist
 
 
     def __update_heatmap(self, selected_index):
