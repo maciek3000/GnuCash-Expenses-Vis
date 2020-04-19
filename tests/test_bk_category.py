@@ -56,6 +56,9 @@ def test_initialize_grid_elements(bk_category):
 
     bk_category.initialize_grid_elements()
 
+    assert len(grid_elems) == len(bk_category.grid_elem_dict.keys())
+    assert len(source_elems) == len(bk_category.grid_source_dict.keys())
+
     # checking Grid Elements (e.g. Divs, Plot, etc)
     for name, single_type in grid_elems:
         assert name in bk_category.grid_elem_dict

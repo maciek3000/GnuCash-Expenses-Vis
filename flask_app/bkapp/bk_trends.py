@@ -421,7 +421,7 @@ class Trends(object):
         self.grid_elem_dict[self.g_monthly_statistics].text = new_text
 
     def __update_daily_info(self):
-        stats = self.current_expense_df[self.price].describe()
+        stats = self.current_expense_df.groupby(by=[self.date]).sum()[self.price].describe()
         stats["median"] = stats["50%"]
 
         new_text = self.stats_template.format(**stats)
@@ -440,7 +440,7 @@ class Trends(object):
         fig.y_range.end = np.nanmax(new_values) + 0.01 * np.nanmax(new_values)
 
     def __update_histogram(self):
-        hist, edges = np.histogram(self.current_expense_df[self.price], density=True, bins=50)
+        hist, edges = np.histogram(self.current_expense_df.groupby(by=[self.date]).sum()[self.price], density=True, bins=50)
 
         source = self.grid_source_dict[self.g_histogram]
 
@@ -471,8 +471,11 @@ class Trends(object):
         data = self.grid_source_dict[self.g_heatmap].data
         fig = self.grid_elem_dict[self.g_heatmap]
 
-        # pd.Series as .unique() returns ndarray
-        x_range = pd.Series(aggregated[column_names["week_str"]].unique()).sort_values().tolist()
+        # new Range generated to include any possible time gaps
+        min = aggregated["week"].min()
+        max = aggregated["week"].max()
+        x_range = pd.Series(range(min, max+1, 1)).apply(lambda x: "{x:04d}".format(x=x)).tolist()
+
         fig.x_range.factors = x_range
 
         temp_values = [0] * len(aggregated[self.price])
@@ -487,12 +490,6 @@ class Trends(object):
         }
 
         data.update(new_values)
-
-        # data["date"] = aggregated[column_names["date_str"]]
-        # data["week"] = aggregated[column_names["week_str"]]
-        # data["weekday"] = aggregated[column_names["weekday_str"]]
-        # data["price"] = aggregated[self.price]
-        # data["count"] = aggregated[column_names["count"]]
 
         self.__update_heatmap_values(selected_index)
 
@@ -528,7 +525,9 @@ class Trends(object):
         self.heatmap_color_mapper.high = high
         self.heatmap_color_mapper.low = low
 
-    def __create_new_column_names(self, columns, n=8):
+    def __create_new_column_names(self, columns, n=8, seed=None):
+
+        random.seed(seed)
 
         default_col_names = {
             "year": "year",
@@ -540,15 +539,18 @@ class Trends(object):
             "week": "week",
             "week_str": "week_str",
             "date_str": "date_str",
-            "count": "count"
+            "count": "count",
+            "monthyear_str": "monthyear_str"
         }
 
+        new_values = []
         for key, item in default_col_names.items():
 
             new_value = item
-            while new_value in columns:
+            while (new_value in columns) or (new_value in new_values):
                 new_value = "".join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=n))
 
+            new_values.append(new_value)
             default_col_names[key] = new_value
 
         return default_col_names
@@ -573,6 +575,7 @@ class Trends(object):
         aggregated[column_dict["month_str"]] = aggregated[self.date].dt.strftime("%b")
         aggregated[column_dict["weekday_str"]] = aggregated[column_dict["weekday"]].astype(str)
         aggregated[column_dict["date_str"]] = aggregated[self.date].dt.strftime("%d-%b-%Y")
+        aggregated[column_dict["monthyear_str"]] = aggregated[column_dict["year_str"]] + "-" + aggregated[self.date].dt.strftime("%m")
 
         # first day is counted as the first Monday in the dataframe
         start_date = aggregated[aggregated[column_dict["weekday"]] == 0][self.date].min()
@@ -592,9 +595,10 @@ class Trends(object):
 
         monday_agg = agg[agg[column_dict["weekday"]] == 0]
         year_month_agg = monday_agg.groupby(column_dict["year_str"]).first()[
-            column_dict["month"]].reset_index().set_index(column_dict["month"])
+            column_dict["monthyear_str"]].reset_index().set_index(column_dict["monthyear_str"])
 
-        month_agg = monday_agg.groupby(column_dict["month"]).first()[
+        # grouped by monthyear_str to include duplicate months from different years in case of a time gap
+        month_agg = monday_agg.groupby(column_dict["monthyear_str"]).first()[
             [column_dict["week_str"], column_dict["month_str"]]]
 
         month_agg[column_dict["year_str"]] = year_month_agg

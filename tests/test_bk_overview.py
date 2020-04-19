@@ -37,6 +37,10 @@ def test_initialize_grid_elements(bk_overview):
 
     bk_overview.initialize_grid_elements(first_month)
 
+    # checking if only specified elements are created
+    assert len(grid_elems) == len(bk_overview.grid_elem_dict.keys())
+    assert len(source_elems) == len(bk_overview.grid_source_dict.keys())
+
     # checking if Grid Elements are initialized
     for name, element in grid_elems:
         assert name in bk_overview.grid_elem_dict

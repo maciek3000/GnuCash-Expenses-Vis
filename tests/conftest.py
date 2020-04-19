@@ -10,6 +10,7 @@ from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
 from flask_app.gnucash.gnucash_db_parser import GnuCashDBParser
 from flask_app.bkapp.bk_category import Category
 from flask_app.bkapp.bk_overview import Overview
+from flask_app.bkapp.bk_trends import Trends
 
 # ========== gnucash_example_creator ========== #
 
@@ -204,6 +205,12 @@ def bk_months():
     return months
 
 
+def bk_column_names():
+    """Returns list of column names from test piecash books, that are needed in creation of several bokeh views."""
+    columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
+    return columns
+
+
 @pytest.fixture
 def bk_categories():
     """Returns list of all categories used by some bk_category tests."""
@@ -244,7 +251,7 @@ def bk_category(gnucash_db_parser_example_book):
             - original_df
     """
 
-    columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
+    columns = bk_column_names()
     month_format_category = month_format()
     color_map = ColorMap()
 
@@ -270,7 +277,7 @@ def bk_category_initialized(bk_category):
 
 @pytest.fixture
 def bk_overview(gnucash_db_parser_example_book):
-    columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
+    columns = bk_column_names()
     test_date = datetime(year=2019, month=2, day=1)
     month_format_overview = month_format()
     color_map = ColorMap()
@@ -289,3 +296,27 @@ def bk_overview_initialized(bk_overview):
     month = "2019-02"
     bk_overview.initialize_grid_elements(month)
     return bk_overview
+
+
+# ========== bk_trends ========== #
+
+
+@pytest.fixture
+def bk_trends(gnucash_db_parser_example_book):
+    columns = bk_column_names()
+    month_format_trends = month_format()
+    color_map = ColorMap()
+
+    args = columns + [month_format_trends, color_map]
+    trends = Trends(*args)
+    trends.months = bk_months()
+    trends.original_expense_df = gnucash_db_parser_example_book.get_expenses_df()
+
+    return trends
+
+
+@pytest.fixture
+def bk_trends_initialized(bk_trends):
+    bk_trends.initialize_gridplot(0)
+
+    return bk_trends
