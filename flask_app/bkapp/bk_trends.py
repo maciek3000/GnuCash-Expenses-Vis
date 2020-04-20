@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
-from datetime import datetime
 import random
 import string
+from datetime import datetime
 
-from bokeh.models import ColumnDataSource, Circle, RadioGroup, LinearColorMapper, FuncTickFormatter, \
-    NumeralTickFormatter, ColorBar, PrintfTickFormatter, BasicTicker, Label
+from bokeh.models import ColumnDataSource, Circle, RadioGroup, LinearColorMapper, FuncTickFormatter
+from bokeh.models import NumeralTickFormatter, ColorBar, PrintfTickFormatter, BasicTicker, Label
 
 from bokeh.models.widgets import Div
 from bokeh.plotting import figure
@@ -13,7 +13,28 @@ from bokeh.layouts import row, column
 
 from .pandas_functions import unique_values_from_column
 
+
 class Trends(object):
+    """Trends Object that provides methods to generate gridplot used in Trends View in flask_app.
+
+                Object expects:
+                    - appropriate column names for the expense DataFrame that will be provided to other methods;
+                    - month_format string, which represents in what string format date in monthyear column was saved;
+                    - color_map ColorMap object, which exposes attributes for specific colors.
+
+                Main methods are:
+                    - gridplot() : workhorse of the Object, creates elements gridplot, creates callbacks and updates
+                        appropriate elements of the grid. Returns grid that can be served in the Bokeh Server.
+                    - initalize_grid_elements() : creates all elements and data sources of gridplot and assigns them
+                        appropriately to self.grid_elem_dict and self.grid_source_dict
+                    - update_gridplot function, called when the whole gridplot needs to be updated;
+                    - update_gridplot_on_month_selection_change, called when the selection of months on the line plot
+                        is changed.
+
+                Attributes of the instance Object are described as single-line comments in __init__() method;
+                Other attributes of the class are HTML templates or other text used in Div or other Web Elements
+                creation; they are described in corresponding functions that update those Elements.
+            """
 
     monthly_title = "Monthly"
     daily_title = "Daily"
@@ -26,7 +47,7 @@ class Trends(object):
     """
 
     line_plot_title = "Monthly Expenses"
-    histogram_title ="Daily Expenses Histogram"
+    histogram_title = "Daily Expenses Histogram"
 
     heatmap_title = "Heatmap"
     heatmap_radio_buttons = ["Price", "# of Products"]
@@ -93,7 +114,7 @@ class Trends(object):
         self.heatmap_color_mapper = None
         self.heatmap_df_column_dict = None
 
-
+        # Identifiers for Grid Elements and DataSources
         self.g_monthly_title = "Monthly Title"
         self.g_monthly_statistics = "Monthly Stats"
         self.g_daily_title = "Daily Title"
@@ -109,27 +130,25 @@ class Trends(object):
         self.grid_source_dict = None
 
     def gridplot(self, expense_dataframe):
+        """Main function of Trends Object. Creates Gridplot with appropriate Visualizations and Elements and
+                    returns it.
 
-        # Trends ########################
-        # Info                  # Hover Tool                    # Line Plot Title
-        # Average Expenses      # Expenses                      # Line Plot with 2 lines (raw and % change)
-        # Median                # Higher/Lower % than Average   # Line Plot with 2 lines (raw and % change)
-        # Minimum               # Transactions Number           # Line Plot with 2 lines (raw and % change)
-        # Maximum               #                               # Line Plot with 2 lines (raw and % change)
-        # Standard Deviation    #                               # Line Plot with 2 lines (raw and % change)
-        ###########################
-        # HeatMap Title
-        # Heatmap Options (Transactions # or Price Sum)
-        # # # # # # # # #
-        # Heatmap
-        # Heatmap
-        # Heatmap
+                    Accepts expense_dataframe argument that should be a Dataframe representing Expenses.
+
+                    The function does several things:
+                        - initializes the gridplot,
+                        - sets Month property to be a collection of all months present in expense_dataframe,
+                        - set .chosen_months property to .months (as during initialization, all months are selected)
+                        - chooses initial Heatmap Radio Button selection
+                        - sets callback on chosen grid elements, so that changes made by the user are then reflected
+                            to other grid elements
+                        - returns created grid as a bokeh layout, that can be later used in a Bokeh Server
+                """
 
         self.original_expense_df = expense_dataframe
         self.current_expense_df = expense_dataframe
         self.months = unique_values_from_column(expense_dataframe, self.monthyear)
         self.chosen_months = self.months  # initially all months are selected
-
 
         initial_heatmap_button_selected = 0
 
@@ -148,10 +167,11 @@ class Trends(object):
 
             if new_indices != old_indices:
                 self.__update_chosen_months(new_indices)
-                self.update_gridplot()
+                self.update_gridplot_on_month_selection_change()
 
         self.grid_source_dict[self.g_line_plot].selected.on_change("indices", line_plot_selection_callback)
 
+        # Gridplot
         grid = column(
             row(
                 column(
@@ -182,6 +202,32 @@ class Trends(object):
         return grid
 
     def initialize_gridplot(self, initial_heatmap_choice):
+        """Initializes all Elements and DataSources of the Gridplot.
+
+            Function creates several Elements of a Gridplot:
+                - Monthly Title and Monthly Statistic Expenses Divs
+                - Daily Title and Daily Statistic Expenses Divs
+                - Monthly Expenses Line Plot
+                - Daily Expenses Histogram
+                - Heatmap Title Div
+                - Heatmap Radio Button Group
+                - Heatmap
+
+            Additionally, Separate DataSources (ColumnDataSources) are created for:
+                - Line Plot
+                - Histogram
+                - Heatmap
+
+            This is made as updates to some Elements are based only on property changes of those Elements
+            (e.g. Div.text), whereas other Elements are automatically changed when their ColumnDataSource data
+            is changed (e.g. Category Barplot).
+
+            In the end, all Elements go into one dictionary, whereas DataSources go into other dictionary which are
+            then placed into .grid_elem_dict and .grid_source_dict attributes, respectively.
+
+            Purposes of Elements are described either in the functions that create them or in the functions that
+            update the content of the Element.
+        """
 
         elem_dict = {}
         source_dict = {}
@@ -190,6 +236,7 @@ class Trends(object):
         info_elem_css = "info_element"
         monthly_css = "monthly_class"
 
+        # Statistics Divs
         elem_dict[self.g_monthly_title] = Div(text=self.monthly_title, css_classes=[
             info_title_elem_css, info_elem_css, monthly_css])
         elem_dict[self.g_monthly_statistics] = Div(text=self.stats_template, css_classes=[
@@ -198,15 +245,19 @@ class Trends(object):
         elem_dict[self.g_daily_title] = Div(text=self.daily_title, css_classes=[info_title_elem_css, info_elem_css])
         elem_dict[self.g_daily_statistics] = Div(text=self.stats_template, css_classes=[info_elem_css])
 
+        # Line Plot and Histogram
         source_dict[self.g_line_plot] = self.__create_line_plot_source()
         elem_dict[self.g_line_plot] = self.__create_line_plot(source_dict[self.g_line_plot])
 
         source_dict[self.g_histogram] = self.__create_histogram_source()
         elem_dict[self.g_histogram] = self.__create_histogram(source_dict[self.g_histogram])
 
+        # Heatmap
         elem_dict[self.g_heatmap_title] = Div(text=self.heatmap_title, css_classes=["heatmap_title"])
-        elem_dict[self.g_heatmap_buttons] = RadioGroup(labels=self.heatmap_radio_buttons, active=initial_heatmap_choice,
-                                                       css_classes=["heatmap_radio_buttons"], inline=True)
+        elem_dict[self.g_heatmap_buttons] = RadioGroup(
+            labels=self.heatmap_radio_buttons, active=initial_heatmap_choice,
+            css_classes=["heatmap_radio_buttons"], inline=True
+        )
 
         source_dict[self.g_heatmap] = self.__create_heatmap_source()
         elem_dict[self.g_heatmap] = self.__create_heatmap(source_dict[self.g_heatmap])
@@ -214,19 +265,40 @@ class Trends(object):
         self.grid_elem_dict = elem_dict
         self.grid_source_dict = source_dict
 
-    def update_gridplot(self, heatmap_choice=0):
+    def update_gridplot(self, heatmap_choice):
+        """Helper function that calls specific updates for specified elements of the grid.
+
+            Requires heatmap_choice argument that represents chosen index of Heatmap Radio Button Group.
+        """
+
         self.__update_current_expense_df()
         self.__update_info()
         self.__update_line_plot()
         self.__update_histogram()
         self.__update_heatmap(heatmap_choice)
 
+    def update_gridplot_on_month_selection_change(self):
+        """Helper function that calls specific updates for specified elements of the grid."""
+
+        self.__update_current_expense_df()
+        self.__update_info()
+        self.__update_histogram()
+
     # ========== Creation of Grid Elements ========== #
 
     def __create_line_plot_source(self):
+        """Creation of Line Plot DataSource for Gridplot.
 
+            ColumnDataSource consist of two keys:
+                - x : contains months for the X-axis, formatted in "%b-%y" format (e.g. Jan-19)
+                - y : temp values of the same length as x; they will be replaced when the update function for the
+                    line plot is called
+
+            Returns created ColumnDataSource.
+        """
         new_format = "%b-%Y"
-        formatted_months = [datetime.strptime(month, self.monthyear_format).strftime(new_format) for month in self.months]
+        formatted_months = [datetime.strptime(month, self.monthyear_format).strftime(new_format)
+                            for month in self.months]
 
         data = {
             "x": formatted_months,
@@ -240,7 +312,26 @@ class Trends(object):
         return source
 
     def __create_line_plot(self, source):
+        """Creates Line Plot showing trends of monthly expenses.
 
+            Function accept argument:
+                - source
+            which should be ColumnDataSource with "x" and "y" keys and corresponding collections of values associated
+            with them. It will be then used as a source for a created Plot.
+
+            Created figure will have only "box_select" and "hover_tool" toolbox options enabled;
+            hover tooltip is defined as HTML in .line_plot_tooltip property.
+
+            Figure will plot two models: Line and Scatter (Circles). This is done so that user can freely select
+            points on the graph and have visual cues (decreased alpha) that the selection works.
+
+            Figure itself will plot "x" values from source on X-axis and "y" values from source on Y-axis.
+
+            Additionally, message is added at the top of the plot, informing user about possibility of
+            selecting points on the graph.
+
+            Returns created Plot p.
+        """
         base_color = self.color_map.contrary_color
 
         p = figure(width=540, height=340, x_range=source.data["x"], toolbar_location=None, tools=["box_select"],
@@ -278,6 +369,15 @@ class Trends(object):
         return p
 
     def __create_histogram_source(self):
+        """Creation of Histogram Barplot DataSource for Gridplot.
+
+            ColumnDataSource consist of three keys:
+                - hist: defines bins present on the y-axis of the histogram,
+                - top_edges: defines top edges of rectangles in the histogram,
+                - bottom_edges: defines bottom edges of rectangles in the histogram.
+
+            Returns created ColumnDataSource.
+        """
 
         data = {
             "hist": [0],
@@ -290,14 +390,24 @@ class Trends(object):
         return source
 
     def __create_histogram(self, source):
+        """Creates Histogram Barplot showing Distribution of Daily Expenses.
 
+            Figure plots quadrilateral representing histogram data of daily expenses. Whole figure is rotated
+            90 degrees, so that quadrilaterals are plotted in a vertical fashion.
+
+            Values of quads are:
+                - left: 0, to start directly at y-axis
+                - right: "hist" column, representing probability (histogram) data,
+                - top & bottom: "top_edges" and "bottom_edges", edges of quads which should be plotted
+
+            Returns created Plot p.
+        """
         p = figure(width=260, height=340, title=self.histogram_title, toolbar_location=None,
                    tools=[""])
 
         p.quad(left=0, right="hist", top="top_edges", bottom="bottom_edges",
                source=source, fill_color=self.color_map.link_text_color,
                line_color=self.color_map.link_text_color)
-
 
         p.title.text_color = self.color_map.label_text_color
         p.title.text_font_size = "16px"
@@ -314,6 +424,18 @@ class Trends(object):
         return p
 
     def __create_heatmap_source(self):
+        """Creation of Heatmap Barplot DataSource for Gridplot.
+
+            ColumnDataSource consist of several keys:
+                - week: weeks of year (e.g. 1, 2, 52, 67)
+                - weekday: day of the week (from 0 to 6)
+                - value: column which will be plotted in the heatmap
+                - date: date of a single point
+                - price: price paid in a day
+                - count: number of products bought in a day
+
+            Returns created ColumnDataSource.
+        """
 
         data = {
             "week": [0],
@@ -331,7 +453,25 @@ class Trends(object):
         return source
 
     def __create_heatmap(self, source):
+        """Creates Heatmap Plot of Expenses.
 
+            "Heatmap" Plot is a Figure plotting rectangles side by side, with every rectangle colored according
+            to the defined color palette and the value associated with a given rectangle.
+
+            Heatmap Plot in this case plots Week numbers on the X axis (week numbers from a year, e.g. 1, 13, 52)
+            and days of the week (Monday, Tuesday, etc.) on the Y axis. This way, there are maximum 7 rectangles
+            in a column and as many rows as weeks in the data.
+
+            X axis is a Categorical Range of Week Numbers. Y axis is a Categorical Range of Strings representing
+            numbers of days of the week (Monday - "0", Sunday - "6"). Y axis has also formatter attached to it,
+            to format ticks into English 3-letter short acronyms for every day (e.g. Mon, Tue, etc.).
+
+            ColorPalette is defined from ColorMap object which defines tints from a base color. Every second color
+            from the palette is used for a bigger contrast. Additionally, ColorBar is attached to the Plot on the
+            right side to provide color legend for a user.
+
+            Returns created Plot p.
+        """
 
         y_weekdays = [str(x) for x in range(6, -1, -1)]  # there is always 7 days in a week
         x_weeks = list(map(lambda x: str(x), range(1, 53)))
@@ -387,8 +527,8 @@ class Trends(object):
 
         color_bar = ColorBar(color_mapper=cmap, ticker=BasicTicker(desired_num_ticks=len(palette)),
                              formatter=PrintfTickFormatter(), label_standoff=10, border_line_color=None,
-                             location=(0, 0),
-                             major_label_text_font_size="12px", major_label_text_color=self.color_map.text_color)
+                             location=(0, 0), major_label_text_font_size="12px",
+                             major_label_text_color=self.color_map.text_color)
 
         p.add_layout(color_bar, "right")
 
@@ -397,6 +537,18 @@ class Trends(object):
     # ========== Updating Grid Elements ========== #
 
     def __update_chosen_months(self, indices):
+        """Function updates .chosen_months attribute based on provided indices.
+
+            Depending on indices passed to the function, corresponding months from .months attribute will be chosen.
+            Order of indices doesn't matter.
+
+            If the list is empty, it means that there are no specific months chosen and the attribute should return
+            to it's initial state - all months in the DataFrame.
+            If indices contain any elements, corresponding elements from .months are chosen and loaded into
+            .chosen_months attribute.
+
+            Attribute .chosen_months is updated.
+        """
 
         if len(indices) == 0:
             self.chosen_months = self.months
@@ -404,15 +556,44 @@ class Trends(object):
             self.chosen_months = [self.months[i] for i in indices]
 
     def __update_current_expense_df(self):
+        """Updates .current_expense_df attribute with data filtered by chosen months.
+
+            Original DataFrame (from .original_expense_df) is filtered to include only months present in
+            .chosen_months attribute.
+
+            Attribute .current_expense_df is updated.
+        """
+
         self.current_expense_df = self.original_expense_df[self.original_expense_df[
             self.monthyear].isin(self.chosen_months)]
 
     def __update_info(self):
+        """Helper function that calls updating both monthly and daily statistics Divs, as both of those
+        Elements should be updated at the same time."""
 
         self.__update_monthly_info()
         self.__update_daily_info()
 
     def __update_monthly_info(self):
+        """Updates text in "Monthly Statistics" Div.
+
+            "Monthly Statistics" Div defines several descriptory statistics value (e.g. mean, median, etc.) that are
+            calculated from .current_expense_df dataframe. Df is first grouped by "monthyear" column to aggregate
+            values on a monthly basis and then values are inserted into pre-defined HTML template.
+
+            Several values for formatting are extracted from "price" column:
+                - mean
+                - median
+                - min
+                - max
+                - std
+
+            .stats_template HTML template is used, with values described above replacing their appropriate {format}
+            arguments counterparts.
+
+            Grid Element .g_monthly_statistics[.text] is updated
+        """
+
         stats = self.current_expense_df.groupby(by=[self.monthyear]).sum()[self.price].describe()
         stats["median"] = stats["50%"]
 
@@ -421,6 +602,25 @@ class Trends(object):
         self.grid_elem_dict[self.g_monthly_statistics].text = new_text
 
     def __update_daily_info(self):
+        """Updates text in "Daily Statistics" Div.
+
+            "Daily Statistics" Div defines several descriptory statistics value (e.g. mean, median, etc.) that are
+            calculated from .current_expense_df dataframe. Df is first grouped by "date" column to aggregate
+            values on a daily basis and then values are inserted into pre-defined HTML template.
+
+            Several values for formatting are extracted from "price" column:
+                - mean
+                - median
+                - min
+                - max
+                - std
+
+            .stats_template HTML template is used, with values described above replacing their appropriate {format}
+            arguments counterparts.
+
+            Grid Element .g_daily_statistics[.text] is updated
+        """
+
         stats = self.current_expense_df.groupby(by=[self.date]).sum()[self.price].describe()
         stats["median"] = stats["50%"]
 
@@ -429,7 +629,19 @@ class Trends(object):
         self.grid_elem_dict[self.g_daily_statistics].text = new_text
 
     def __update_line_plot(self):
+        """Updates Line Plot showing expenses aggregated on a monthly level.
 
+            Function calculates monthly expenses from .original_expense_df DataFrame by grouping data by "monthyear"
+            column and then extracting values from "price" column. Those values are then inserted into ColumnDataSource
+            corresponding to Line Plot as new "y" values.
+
+            Additionally, y_range of the Plot is updated: start is 0, whereas end is calculated to 101% of the
+            highest value present in the corresponding "price" column of the aggregated DataFrame.
+
+            Grid Element .g_line_plot and Grid Source Element .g_line_plot are updated.
+        """
+
+        # original_expense_df as line plot shouldn't be changed after month selection update
         new_values = self.original_expense_df.groupby(by=[self.monthyear]).sum()[self.price].tolist()
 
         source = self.grid_source_dict[self.g_line_plot]
@@ -440,7 +652,28 @@ class Trends(object):
         fig.y_range.end = np.nanmax(new_values) + 0.01 * np.nanmax(new_values)
 
     def __update_histogram(self):
-        hist, edges = np.histogram(self.current_expense_df.groupby(by=[self.date]).sum()[self.price], density=True, bins=50)
+        """Updates histogram (BarPlot) data with calculated values.
+
+            Function calculates new values by first aggregating .current_expense_df by "date" column (to calculate
+            daily expenses), extracting sum() from "price" column and then applying np.histogram function to it.
+
+            Hist and edges arrays are obtained:
+                - hist defines probability value of each bin,
+                - edges define edges for each bin.
+
+            Top edge should exclude the last value, whereas bottom edge should exclude the first value.
+
+            Those arrays are then used as new data for Histogram ColumnDataSource columns, "hist", "top_edges" and
+            "bottom_edges".
+
+            Grid Element .g_histogram and Grid Source Element .g_histogram are updated.
+        """
+
+        hist, edges = np.histogram(
+            self.current_expense_df.groupby(by=[self.date]).sum()[self.price],
+            density=True,
+            bins=50
+        )
 
         source = self.grid_source_dict[self.g_histogram]
 
@@ -452,29 +685,61 @@ class Trends(object):
 
         source.data.update(new_values)
 
-        # source.data["hist"] = hist
-        # source.data["top_edges"] = edges[:-1]
-        # source.data["bottom_edges"] = edges[1:]
-
-
     def __update_heatmap(self, selected_index):
+        """Updates Heatmap Plot with Daily data from expense DataFrame.
 
-        # heatmap shouldn't be responsive to Month Selection
-        # or should it be?
+            Accepts selected_index argument, which represents selection in the Heatmap Radio Group Button. Refer to
+            __update_heatmap_values function, as it isn't used in the body of this function per se.
 
+            Function first creates new aggregated DataFrame- .original_expense_df is aggregated by "date" column
+            to create "Daily" aggregation. Specific transformations are described in __aggregated_expense_df function.
+
+            From this newly created df several values are extracted and inserted into ColumnDataSource of the Heatmap:
+                - "date": array of Strings of dates in "%d-%b-%Y" format,
+                - "week": array of Strings of numbers of weeks padded to 4 digits (e.g. "0001")
+                - "weekday" array of Strings of numbers of days of the week (e.g. "1", "5")
+                - "price": array of Float numbers representing Daily expenses
+                - "count": array of Numbers representing number of transactions in a single day
+                - "value": values of either "price" or "count" that are displayed in the Heatmap (refer to
+                        __update_heatmap_values for description).
+
+            .heatmap_df_column_dict is updated with the dictionary from __create_new_column_names function - it
+            provides mapping between column names aliases and "real" column names in the Dataframe.
+
+            Range of X axis is also updated - new Range of weeks is calculated: start = min week number
+            of the aggregated df; stop = max week number of the aggregated df; interval - 1. This range
+            is also padded to 4 digits, similiar to "weekday" column and then inserted into the Plot as the new
+            X axis range. This is done to properly visualize any breaks or time gaps if they are present in the data.
+
+            There is also a FuncTickFormatter applied to X axis - week number ticks are matched to those in the
+            provided dictionary (described in __create_first_week_to_month_dict function) and replaced with their
+            respective items. If there is no match for the week, null tick ("") is placed.
+
+            Such action is performed to declutter X axis - if it was left with week numbers, there would be a lot of
+            ticks and their labels would overflow one another. By replacing only some of the week numbers with
+            their respective items (month names), we not only give more space to the X axis range, but also provide
+            user with the more intuitive figures (month names that everyone is familiar with instead of week numbers).
+
+            Grid Element .g_heatmap and Grid Source Element .g_heatmap are updated.
+        """
+
+        # Heatmap isn't responsive to Month Selection
         df = self.original_expense_df
 
+        # column names dict and aggregated df
         self.heatmap_df_column_dict = self.__create_new_column_names(df.reset_index().columns)
         aggregated = self.__aggregated_expense_df(df)
-
         column_names = self.heatmap_df_column_dict
+
         data = self.grid_source_dict[self.g_heatmap].data
         fig = self.grid_elem_dict[self.g_heatmap]
 
         # new Range generated to include any possible time gaps
-        min = aggregated["week"].min()
-        max = aggregated["week"].max()
-        x_range = pd.Series(range(min, max+1, 1)).apply(lambda x: "{x:04d}".format(x=x)).tolist()
+        new_min = aggregated["week"].min()
+        new_max = aggregated["week"].max()
+
+        # new_max + 1 as range function is exclusive for the end parameter
+        x_range = pd.Series(range(new_min, new_max+1, 1)).apply(lambda x: "{x:04d}".format(x=x)).tolist()
 
         fig.x_range.factors = x_range
 
@@ -491,8 +756,10 @@ class Trends(object):
 
         data.update(new_values)
 
+        # updating "value" Column in ColumnDataSource based on the index
         self.__update_heatmap_values(selected_index)
 
+        # Formatter of X axis
         func_tick_dict = self.__create_first_week_to_month_dict(aggregated)
 
         formatter = FuncTickFormatter(args={"d": func_tick_dict}, code="""
@@ -507,6 +774,32 @@ class Trends(object):
         fig.xaxis.formatter = formatter
 
     def __update_heatmap_values(self, selected_index):
+        """Updates "value" Column in Heatmap ColumnDataSource based on provided selected_index argument.
+
+            Selected_index represents current selection of the Heatmap Radio Group buttons chosen by the user.
+            The index shows the choice from .heatmap_radio_buttons Class property list:
+                0 - Price
+                1 - # of Products.
+
+            Given that choice, either "price" Column or "count" Column is inserted as into "value" Column and is
+            then displayed on the Heatmap Plot.
+
+            Additionally, new minimum and maximum is calculated, with which ColorBar Legend of the heatmap is updated
+            to reflect changes.
+            If # of Products is selected, then regular min() and max() values are calculated.
+
+            When Price is selected, then min() serves as a new low for the ColorBar, but new high is calculated as
+            mean + (3 * std). This assumption is based on a fact that in a normal distribution, points above 3 SDs
+            can be considered as outliers. Distribution of values is unknown here - it isn't calculated anywhere
+            and we can only assume that it might be similar to log-normal as home budgets might consist mostly of
+            small transactions and only a handful of them can be considered "big". This way, to solve the problem of
+            most of transactions being shown on the lower spectrum of the color palette, we can treat the distribution
+            of prices as normal and treat values above 3 SDs as outliers. This way differences in colors are preserved
+            and the whole Plot is more informative this way.
+
+            Grid Source Element .g_heatmap and ColorMapper .heatmap_color_mapper are updated.
+        """
+
         # 0 - Price, 1 - Products
         data = self.grid_source_dict[self.g_heatmap].data
 
@@ -526,6 +819,29 @@ class Trends(object):
         self.heatmap_color_mapper.low = low
 
     def __create_new_column_names(self, columns, n=8, seed=None):
+        """Creates new dictionary of column alias: real column name pairs, given columns argument.
+
+            Accepts:
+                - column: collection with column names already in use
+                - n: length of newly created name
+                - seed: seed of random module.
+
+            As the .original_expense_df comes from the user, names of the columns do not always have to follow
+            regular naming patterns. As object has to create new columns and then refer to them later in the runtime,
+            it cannot be assumed that the new names that the functions assign to columns won't be the names already
+            in use in the original DataFrame. Therefore, function to make sure that the names aren't duplicates is
+            needed.
+
+            Function takes embedded default_col_names variable and assigns new column names as items of corresponding
+            keys. Every key defines a default version of the name - if there is no such name in columns parameter, then
+            default names are used.
+
+            However, if any name is already present, then the new random value of length n (from ascii upper and
+            lowercase letters) is created and checked again. New random string is being created as long as it isn't
+            present in the columns or in the already created column names values.
+
+            Returns dictionary of column aliases: new, real column names.
+        """
 
         random.seed(seed)
 
@@ -556,6 +872,32 @@ class Trends(object):
         return default_col_names
 
     def __aggregated_expense_df(self, dataframe):
+        """Creates new dataframe aggregated by "date" column from dataframe passed as the argument.
+
+            dataframe argument should be Pandas Dataframe defining the same columns as .original_expense_df.
+
+            Column names are taken from the dictionary defined in .heatmap_df_column_dict.
+
+            Function aggregates the dataframe by "date" column (.date attribute), calculates both sum() and count()
+            aggregating functions and joins dataframes together such as "count" becomes a column in the dataframe
+            that had sum() applied to it.
+
+            Columns (referred via their aliases) are created:
+                - "year" - year of the transaction
+                - "month" - month of the transaction
+                - "weekday" - day of the week of the transaction
+                - "week" - calculated as the difference between the date in .date Series and min() date in the Df,
+                            floor divided by 7 (creating TimeDelta object) and then extracting number of days.
+                - "year_str" - year of the transaction as String
+                - "month_str" - month of the transaction as String in format "%b"
+                - "weekday_str" - day of the week of the transaction as String
+                - "date_str" - date of the transaction as String in format "%d-%b-%Y", extracted from .date column
+                - "monthyear_str" - concatenated String column as "Year-Month" format, where year has 4 digits and
+                                    month has 2 digits
+                - "week_str" - week number of the transaction as String, padded to 4 digits (e.g. 0001).
+
+            Returns created dataframe.
+        """
 
         column_dict = self.heatmap_df_column_dict
 
@@ -575,7 +917,9 @@ class Trends(object):
         aggregated[column_dict["month_str"]] = aggregated[self.date].dt.strftime("%b")
         aggregated[column_dict["weekday_str"]] = aggregated[column_dict["weekday"]].astype(str)
         aggregated[column_dict["date_str"]] = aggregated[self.date].dt.strftime("%d-%b-%Y")
-        aggregated[column_dict["monthyear_str"]] = aggregated[column_dict["year_str"]] + "-" + aggregated[self.date].dt.strftime("%m")
+        aggregated[column_dict["monthyear_str"]] = aggregated[column_dict["year_str"]] \
+            + "-" \
+            + aggregated[self.date].dt.strftime("%m")
 
         # first day is counted as the first Monday in the dataframe
         start_date = aggregated[aggregated[column_dict["weekday"]] == 0][self.date].min()
@@ -591,6 +935,27 @@ class Trends(object):
         return aggregated
 
     def __create_first_week_to_month_dict(self, agg):
+        """Creates mapping between the number of the first week of the month and the month itself.
+
+            agg should be an aggregated dataframe (created in __aggregated_expense_df function).
+
+            Additional transformations are applied to the agg Dataframe to extract dictionary mapping key, value pairs
+            of: Week number - Month String.
+
+            The assumption made here is that only Mondays can start a Month. After filtering agg dataframe only to
+            those days, grouping by "year_str" is performed to extract first month of a given year (as the provided
+            data does not always have to start in January). This is done to concatenate Year String with it's first
+            Month String into one.
+
+            Agg dataframe is then grouped by "monthyear" and only first week numbers are left. Aggregation is done
+            by "monthyear" column to avoid removing data of same months from different years (December '19 and '20).
+
+            After that, month_str values are concatenated with year values if the given month was the first month
+            in this year. In the end, week_str : month_str dictionary is created.
+
+            week_to_month_dict dictionary is returned.
+        """
+
         column_dict = self.heatmap_df_column_dict
 
         monday_agg = agg[agg[column_dict["weekday"]] == 0]

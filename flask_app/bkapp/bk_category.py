@@ -5,6 +5,7 @@ from datetime import datetime
 from .pandas_functions import unique_values_from_column
 
 from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, NumberFormatter, Circle, Label
+from bokeh.models import NumeralTickFormatter
 from bokeh.layouts import column, row
 from bokeh.plotting import figure
 from bokeh.models.widgets import Div
@@ -125,7 +126,7 @@ class Category(object):
         self.chosen_category = None
         self.chosen_months = None
 
-        # Identificators for Grid Elements and DataSources
+        # Identifiers for Grid Elements and DataSources
         self.g_category_title = "Category Title"
         self.g_dropdown = "Dropdown"
         self.g_statistics_table = "Statistics Table"
@@ -314,7 +315,9 @@ class Category(object):
         """
 
         temp_values = [1] * len(self.months)  # done to ensure that the shape of y values is the same as x
-        formatted_months = [datetime.strftime(datetime.strptime(month, self.monthyear_format), "%b-%y") for month in self.months]
+        formatted_months = [datetime.strftime(datetime.strptime(month, self.monthyear_format), "%b-%y")
+                            for month in self.months]
+
         source = ColumnDataSource(
             data={
                 "x": formatted_months,
@@ -338,7 +341,9 @@ class Category(object):
             points on the graph and have visual cues (decreased alpha) that the selection works.
 
             Figure itself will plot "x" values from CDS on X-axis and "y" values from CDS on Y-axis.
-            Visual changes applied are defined directly in the function and there is no API for that as of now.
+
+            Additionally, message is added at the bottom of the plot, informing user about possibility of
+            selecting points on the graph.
 
             Returns created Plot p.
         """
@@ -375,6 +380,8 @@ class Category(object):
         p.axis.major_label_text_color = self.color_map.label_text_color
         p.axis.major_label_text_font_size = "13px"
         p.xaxis.major_label_orientation = 0.785  # 45 degrees in radians
+
+        p.yaxis.formatter = NumeralTickFormatter(format="0,0.00")
 
         return p
 
@@ -482,14 +489,13 @@ class Category(object):
     def __update_chosen_months(self, indices):
         """Function updates .chosen_months attribute based on provided indices.
 
-            The role of the function is to update .chosen_months attribute based on indices, that represent which
-            months did the user choose in the grid Line Plot.
+            Depending on indices passed to the function, corresponding months from .months attribute will be chosen.
+            Order of indices doesn't matter.
+
             If the list is empty, it means that there are no specific months chosen and the attribute should return
             to it's initial state - all months in the DataFrame.
             If indices contain any elements, corresponding elements from .months are chosen and loaded into
             .chosen_months attribute.
-
-            It doesn't matter in what order .chosen_months are provided.
 
             Attribute .chosen_months is updated.
         """

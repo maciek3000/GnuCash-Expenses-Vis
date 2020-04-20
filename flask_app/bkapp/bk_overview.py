@@ -108,7 +108,7 @@ class Overview(object):
         self.chosen_month = None
         self.next_month = None
 
-        # Identificators for Grid Elements and DataSources
+        # Identifiers for Grid Elements and DataSources
         self.g_month_dropdown = "Month Dropdown"
         self.g_month_title = "Month Title"
         self.g_expenses_chosen_month = "Expenses Last Month"
@@ -215,7 +215,7 @@ class Overview(object):
             (e.g. Div.text), whereas other Elements are automatically changed when their ColumnDataSource data is
             changed (e.g. Category Barplot).
 
-            In the end, all elements go into one dictionary, whereas DataSources go into other dictionary which are
+            In the end, all Elements go into one dictionary, whereas DataSources go into other dictionary which are
             then placed into .grid_elem_dict and .grid_source_dict attributes, respectively.
 
             Purposes of Elements are described either in the functions that create them or in the functions that
@@ -361,6 +361,7 @@ class Overview(object):
 
             Returns created ColumnDataSource.
         """
+
         data = {
             "x": ["a"],
             "top": [1]
