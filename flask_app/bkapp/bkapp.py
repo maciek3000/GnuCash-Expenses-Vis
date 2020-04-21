@@ -6,9 +6,12 @@ from bokeh.models import ColumnDataSource, CDSView, NumeralTickFormatter, GroupF
 from bokeh.plotting import figure
 from bokeh.layouts import column, layout, row
 
+from ..observer import Observer
+
 from .bk_category import Category
 from .bk_overview import Overview
 from .bk_trends import Trends
+from .bk_settings import Settings
 
 from .color_map import ColorMap
 
@@ -16,7 +19,7 @@ from .pandas_functions import create_combinations_of_sep_values
 
 class BokehApp(object):
 
-    category_types = ["Simple", "Expanded", "Combinations"]
+    observer = Observer()
 
     def __init__(self, expense_dataframe, income_dataframe, col_mapping, server_date):
 
@@ -41,6 +44,13 @@ class BokehApp(object):
         color_mapping = ColorMap()
         month_format = "%Y-%m"
 
+        # Settings Object
+        self.settings = Settings(self.original_expense_dataframe[self.category],
+                                 self.original_expense_dataframe[self.all],
+                                 self.original_expense_dataframe[self.date],
+                                 month_format,
+                                 self.observer)
+
         # View Objects
         self.category_view = Category(self.category, self.monthyear, self.price, self.product,
                                  self.date, self.currency, self.shop, month_format, color_mapping)
@@ -49,21 +59,6 @@ class BokehApp(object):
         self.trends_view = Trends(self.category, self.monthyear, self.price, self.product,
                                 self.date, self.currency, self.shop, month_format, color_mapping)
 
-        # Category State Variables
-        self.category_column = None
-        self.all_categories_simple = None
-        self.all_categories_extended = None
-        self.all_categories_combinations = None
-
-        self.all_categories = None
-        self.chosen_categories = None
-
-        # Month Range Variables
-        self.all_months = None
-        self.chosen_months = None
-
-        self.__create_initial_categories()
-        # self.__create_initial_months_list()
 
     def category_gridplot(self):
         return self.category_view.gridplot(self.current_expense_dataframe)
@@ -75,42 +70,27 @@ class BokehApp(object):
         return self.trends_view.gridplot(self.current_expense_dataframe)
 
     def settings_categories(self):
+        return self.settings.category_options()
+
+    def settings_month_range(self):
+        return self.settings.month_range_options()
 
 
-        cat_name = "ALL_CATEGORIES"
-        all_cats = sorted(self.original_expense_dataframe[cat_name].unique().tolist())
-        current_cats = self.current_expense_dataframe[cat_name].unique().tolist()
+    @observer.register
+    def print_change(self, key, value):
+        print("New value for {} is: {}".format(key, value))
 
-        def callback(new):
-            chosen_filters = [all_cats[i] for i in new]
-            cond = np.isin(self.original_expense_dataframe[cat_name], chosen_filters)
-            self.current_expense_dataframe = self.original_expense_dataframe[cond]
+    def __update_current_expense_dataframe(self):
+        pass
 
-        checkbox_group = CheckboxGroup(
-            labels=all_cats,
-            active=[all_cats.index(x) for x in current_cats]
-        )
+        # self.current_expense_dataframe = self.original_expense_dataframe[self.category]
+        #
+        # chosen_filters = [all_cats[i] for i in new]
+        # cond = np.isin(self.original_expense_dataframe[cat_name], chosen_filters)
+        # self.current_expense_dataframe = self.original_expense_dataframe[cond]
 
-        checkbox_group.on_click(callback)
 
-        return checkbox_group
 
-    def month_range_slider(self):
-
-        p = Slider(start=1, end=10)
-
-        return p
-
-    def __create_initial_categories(self):
-        df = self.original_expense_dataframe
-
-        simple = df[self.category].unique().tolist()
-        extended = df[self.all].unique().tolist()
-        combinations = create_combinations_of_sep_values(extended, ":")
-
-        self.all_categories_simple = simple
-        self.all_categories_extended = extended
-        self.all_categories_combinations = combinations
 
     #TODO: category type radio buttons
 

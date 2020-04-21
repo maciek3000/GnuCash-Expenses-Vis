@@ -8,8 +8,8 @@ def create_bp(bkapp_server_address):
 
     @bp.route('/settings')
     def settings():
-        categories = server_document(bkapp_server_address + 'settings')
-        month_range = server_document(bkapp_server_address + 'slider')
+        categories = server_document(bkapp_server_address + 'settings_categories')
+        month_range = server_document(bkapp_server_address + 'settings_month_range')
         return render_template('settings.html', categories=categories, month_range=month_range)
 
     return bp
