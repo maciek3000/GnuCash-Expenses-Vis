@@ -1,4 +1,4 @@
-from flask_app.bkapp.pandas_functions import unique_values_from_column
+from flask_app.bkapp.pandas_functions import unique_values_from_column, create_combinations_of_sep_values
 
 import pytest
 import pandas as pd
@@ -18,3 +18,19 @@ def test_get_unique_values_from_column(df, col_name, expected_result):
 
     result = unique_values_from_column(df, col_name)
     assert result == expected_result
+
+@pytest.mark.parametrize(
+    ("list_of_values", "expected_result", "sep"),
+    (
+            (["A:B:C:D", "One:Two"], ["A", "A:B", "A:B:C", "A:B:C:D", "One", "One:Two"], ":"),
+            (["One:Two:Three:Five", "One:Two:Three:Four"],
+             ["One", "One:Two", "One:Two:Three", "One:Two:Three:Five", "One:Two:Three:Four"],
+             ":"),
+            (["A_B:C_D"], ["A", "A_B:C", "A_B:C_D"], "_"),
+            (["A", "B", "C"], ["A", "B", "C"], None)
+    )
+)
+def test_create_combinations_of_sep_values(list_of_values, expected_result, sep):
+    """Testing creating combinations from lists with String with separators."""
+    actual_result = create_combinations_of_sep_values(list_of_values, sep)
+    assert actual_result == expected_result

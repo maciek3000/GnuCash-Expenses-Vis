@@ -12,6 +12,8 @@ from .bk_trends import Trends
 
 from .color_map import ColorMap
 
+from .pandas_functions import create_combinations_of_sep_values
+
 class BokehApp(object):
 
     category_types = ["Simple", "Expanded", "Combinations"]
@@ -61,7 +63,7 @@ class BokehApp(object):
         self.chosen_months = None
 
         self.__create_initial_categories()
-        self.__create_initial_months_list()
+        # self.__create_initial_months_list()
 
     def category_gridplot(self):
         return self.category_view.gridplot(self.current_expense_dataframe)
@@ -101,6 +103,14 @@ class BokehApp(object):
 
     def __create_initial_categories(self):
         df = self.original_expense_dataframe
+
+        simple = df[self.category].unique().tolist()
+        extended = df[self.all].unique().tolist()
+        combinations = create_combinations_of_sep_values(extended, ":")
+
+        self.all_categories_simple = simple
+        self.all_categories_extended = extended
+        self.all_categories_combinations = combinations
 
     #TODO: category type radio buttons
 
