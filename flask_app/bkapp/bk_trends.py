@@ -402,7 +402,7 @@ class Trends(object):
 
             Returns created Plot p.
         """
-        p = figure(width=260, height=340, title=self.histogram_title, toolbar_location=None,
+        p = figure(width=300, height=340, title=self.histogram_title, toolbar_location=None,
                    tools=[""])
 
         p.quad(left=0, right="hist", top="top_edges", bottom="bottom_edges",

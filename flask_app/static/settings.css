@@ -1,0 +1,29 @@
+.settings_title {
+    font-size: 3em;
+    color: var(--base-color);
+    margin-bottom: 32px;
+}
+
+.menu_button {
+    width: 100%;
+    cursor: pointer;
+    font-size: 1.7em;
+    margin: 8px 0px;
+    color: var(--gray-title);
+    border-top: 0px solid var(--light-gray);
+}
+
+.menu_button::before {
+    content: '\25BF';
+}
+
+.active::before {
+    content: "\25B8"
+}
+
+.button_content {
+    width: 100%;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.2s ease-out;
+}

@@ -40,7 +40,6 @@ class BokehApp(object):
                                  self.date, self.currency, self.shop, month_format, color_mapping)
         self.overview_view = Overview(self.category, self.monthyear, self.price, self.product,
                                  self.date, self.currency, self.shop, month_format, server_date, color_mapping)
-
         self.trends_view = Trends(self.category, self.monthyear, self.price, self.product,
                                 self.date, self.currency, self.shop, month_format, color_mapping)
 
