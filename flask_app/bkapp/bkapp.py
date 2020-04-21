@@ -49,12 +49,19 @@ class BokehApp(object):
 
         # Category State Variables
         self.category_column = None
+        self.all_categories_simple = None
+        self.all_categories_extended = None
+        self.all_categories_combinations = None
+
         self.all_categories = None
         self.chosen_categories = None
 
         # Month Range Variables
         self.all_months = None
         self.chosen_months = None
+
+        self.__create_initial_categories()
+        self.__create_initial_months_list()
 
     def category_gridplot(self):
         return self.category_view.gridplot(self.current_expense_dataframe)
@@ -76,7 +83,6 @@ class BokehApp(object):
             chosen_filters = [all_cats[i] for i in new]
             cond = np.isin(self.original_expense_dataframe[cat_name], chosen_filters)
             self.current_expense_dataframe = self.original_expense_dataframe[cond]
-            # self.current_source = ColumnDataSource(self.expense_current_datasource)
 
         checkbox_group = CheckboxGroup(
             labels=all_cats,
@@ -92,6 +98,9 @@ class BokehApp(object):
         p = Slider(start=1, end=10)
 
         return p
+
+    def __create_initial_categories(self):
+        df = self.original_expense_dataframe
 
     #TODO: category type radio buttons
 
