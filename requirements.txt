@@ -1,0 +1,7 @@
+bokeh==2.0.1
+Flask==1.1.2
+numpy==1.18.3
+pandas==1.0.3
+piecash==1.0.0
+pytest==5.4.1
+tornado==6.0.4
