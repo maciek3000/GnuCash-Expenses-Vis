@@ -28,16 +28,21 @@ class BokehServer(object):
             '/category': self.category,
             '/some_data': self.some_data,
             '/overview': self.overview,
-            '/settings': self.settings,
+            '/settings_categories': self.settings_categories,
+            '/slider': self.slider,
             '/test_table': self.test_table,
         }
 
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
+    def slider(self, doc):
+        fig = self.bkapp.month_range_slider()
+        doc.add_root(fig)
+        doc.theme = self.theme
 
-    def settings(self, doc):
+    def settings_categories(self, doc):
 
-        fig = self.bkapp.settings("ALL_CATEGORIES")
+        fig = self.bkapp.settings_categories()
         doc.add_root(fig)
         doc.theme = self.theme
 
