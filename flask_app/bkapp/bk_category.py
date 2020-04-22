@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-from .pandas_functions import unique_values_from_column
+from .pandas_functions import unique_values_from_column, create_combinations_of_sep_values
 
 from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, NumberFormatter, Circle, Label
 from bokeh.models import NumeralTickFormatter
@@ -142,11 +142,13 @@ class Category(object):
         self.grid_elem_dict = None
         self.grid_source_dict = None
 
-    def gridplot(self, dataframe):
+    def gridplot(self, dataframe, current_categories):
         """Main function of Category Object. Creates Gridplot with appropriate Visualizations and Elements and
             returns it.
 
-            Accepts dataframe argument that should be a Dataframe representing Expenses.
+            Accepts
+                - dataframe that should be a Dataframe representing Expenses;
+                - current_categories list with categories which user will interact with.
 
             The function does several things:
                 - initializes the gridplot,
@@ -167,7 +169,7 @@ class Category(object):
         self.chosen_months_and_category_df = dataframe
 
         # TODO: categories will be extracted depending on settings
-        self.categories = unique_values_from_column(dataframe, self.category)
+        self.categories = current_categories
         self.months = unique_values_from_column(dataframe, self.monthyear)
         self.chosen_months = self.months  # during initialization, all months are selected
 
@@ -300,6 +302,10 @@ class Category(object):
 
         self.__update_transactions_table()
         self.__update_product_histogram_table()
+
+    def change_category_column(self, new_col):
+        """Changes .category attribute to col argument."""
+        self.category = new_col
 
     # ========== Creation of Grid Elements ========== #
 

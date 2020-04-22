@@ -271,6 +271,10 @@ class Overview(object):
         self.__update_piechart()
         self.__update_category_barplot()
 
+    def change_category_column(self, col):
+        """Changes .category attribute to col argument."""
+        self.category = col
+
     # ========== Creation of Grid Elements ========== #
 
     def __create_savings_piechart_source(self):
