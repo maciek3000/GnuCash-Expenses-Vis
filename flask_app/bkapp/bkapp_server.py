@@ -28,11 +28,9 @@ class BokehServer(object):
         self.views = {
             '/trends': self.trends,
             '/category': self.category,
-            '/some_data': self.some_data,
             '/overview': self.overview,
             '/settings_categories': self.settings_categories,
             '/settings_month_range': self.settings_month_range,
-            '/test_table': self.test_table,
         }
 
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
@@ -46,12 +44,6 @@ class BokehServer(object):
     def settings_categories(self, doc):
 
         fig = self.bkapp.settings_categories()
-        doc.add_root(fig)
-        doc.theme = self.theme
-
-    def some_data(self, doc):
-
-        fig = self.bkapp.some_data()
         doc.add_root(fig)
         doc.theme = self.theme
 
@@ -69,12 +61,6 @@ class BokehServer(object):
 
     def overview(self, doc):
         fig = self.bkapp.overview_gridplot()
-        doc.add_root(fig)
-        doc.theme = self.theme
-
-    def test_table(self, doc):
-
-        fig = self.bkapp.test_table()
         doc.add_root(fig)
         doc.theme = self.theme
 

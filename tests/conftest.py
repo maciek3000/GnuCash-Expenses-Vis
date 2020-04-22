@@ -324,3 +324,9 @@ def bk_trends_initialized(bk_trends):
     bk_trends.initialize_gridplot(0)
 
     return bk_trends
+
+# ========== bk_settings ========== #
+
+@pytest.fixture
+def bk_settings(gnucash_db_parser_example_book):
+    pass

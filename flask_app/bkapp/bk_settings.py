@@ -1,22 +1,20 @@
 import pandas as pd
-import numpy as np
 
-from bokeh.models.widgets import RadioGroup, CheckboxGroup, Div
+from datetime import datetime
+
+from bokeh.models.widgets import RadioGroup, CheckboxGroup, DateRangeSlider
 from bokeh.layouts import column
-from bokeh.plotting import figure
 
 from ..observer import Observer
 
 from .pandas_functions import create_combinations_of_sep_values
 
 
-
-
 class Settings(object):
 
-    # all_categories = Observer.watched_property("observer", "all_categories")
     chosen_categories = Observer.watched_property("observer", "chosen_categories", "parent")
     chosen_category_type = Observer.watched_property("observer", "chosen_category_type", "parent")
+    chosen_months = Observer.watched_property("observer", "chosen_months", "parent")
 
     def __init__(self, simple_categories_series, extended_categories_series, date_series,
                  month_year_format, category_sep, category_types, observer, bkapp):
@@ -32,10 +30,6 @@ class Settings(object):
         self.category_sep = category_sep
         self.category_type_labels = category_types
 
-        # # Elements
-        # self.category_options_grid = None
-        # self.month_range_grid = None
-
         # Category State Variables
         self.all_categories_simple = None
         self.all_categories_extended = None
@@ -48,18 +42,25 @@ class Settings(object):
 
         # Month Range Variables
         self.all_months = None
-        self.chosen_months = None
 
         # State
         self.are_categories_initialized = False
+        self.is_month_range_initialized = False
 
     def category_options(self):
         g = self.__category_gridplot()
 
         return g
 
+    def month_range_options(self):
+        g = self.__month_range_gridplot()
+
+        return g
+
     def initialize_settings_variables(self):
         self.__initialize_categories()
+        self.__initialize_months()
+
 
     def __category_gridplot(self):
 
@@ -99,6 +100,28 @@ class Settings(object):
 
         return grid
 
+    def __month_range_gridplot(self):
+
+        if not self.is_month_range_initialized:
+            self.__initialize_months()
+
+
+        fig = DateRangeSlider(start=self.all_months[0], end=self.all_months[-1], step=1,
+                          value=(self.chosen_months[0], self.chosen_months[-1]),
+                          format="%b-%Y", title="Chosen Month Range: ",
+                          css_classes=["month_range_slider"])
+
+
+        def month_range_callback(attr, old, new):
+            old_str = self.__create_timetuple_string_from_timestamp(old, self.monthyear_format)
+            new_str = self.__create_timetuple_string_from_timestamp(new, self.monthyear_format)
+            if old_str != new_str:
+                self.__update_chosen_months(new)
+
+        fig.on_change("value", month_range_callback)
+
+        return fig
+
     def __initialize_categories(self):
 
         simple = self.original_simple_categories.sort_values().unique().tolist()
@@ -114,6 +137,18 @@ class Settings(object):
         self.chosen_categories = simple
 
         self.are_categories_initialized = True
+
+    def __initialize_months(self):
+
+        start_date = self.original_dates.min()
+        stop_date = self.original_dates.max()
+
+        all_dates_range = pd.to_datetime(pd.date_range(start_date, stop_date, freq="M")).tolist()
+
+        self.all_months = all_dates_range
+        self.chosen_months = all_dates_range
+
+        self.is_month_range_initialized = True
 
     def __update_categories_on_category_type_change(self, index):
 
@@ -135,13 +170,20 @@ class Settings(object):
     def __update_chosen_categories_on_new(self, new):
         self.chosen_categories = [self.all_categories[x] for x in new]
 
-    def month_range_options(self):
-        if self.month_range_grid is None:
-            self.__initialize_month_range_grid()
 
-        return self.month_range_grid
+    def __create_timetuple_string_from_timestamp(self, single_tuple,  date_format):
+        if type(single_tuple[0]) is pd.Timestamp:
+            single_tuple = tuple([x.timestamp() for x in single_tuple])
+        val = tuple(map(lambda x: datetime.fromtimestamp(float(x) / 1e3).strftime(date_format), single_tuple))
+        return val
 
-    def __initialize_month_range_grid(self):
+    def __update_chosen_months(self, new):
 
-        self.month_range_grid = column(Div(text="pierwsyz div"), Div(text="drugi div"), name="kolyumna")
+        # done to first convert timestamp to datetime and then to set datetime to day 1 - this way
+        # date_range is properly created
+        new = tuple(map(lambda x: datetime.fromtimestamp(float(x) / 1e3), new))
+        new = [datetime(year=x.year, month=x.month, day=1).strftime("%Y-%m-%d") for x in new]
 
+        dr = pd.date_range(new[0], new[1], freq="MS", normalize=True).tolist()
+
+        self.chosen_months = dr

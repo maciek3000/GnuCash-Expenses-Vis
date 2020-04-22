@@ -1,11 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from bokeh.models.widgets import CheckboxGroup, Div, Select, Slider
-from bokeh.models import ColumnDataSource, CDSView, NumeralTickFormatter, GroupFilter, DataTable, TableColumn, CustomJS
-from bokeh.plotting import figure
-from bokeh.layouts import column, layout, row
-
 from ..observer import Observer
 
 from .bk_category import Category
@@ -15,9 +10,9 @@ from .bk_settings import Settings
 
 from .color_map import ColorMap
 
-from .pandas_functions import create_combinations_of_sep_values
 
 class BokehApp(object):
+
 
     observer = Observer()
     category_types = ["Simple", "Expanded", "Combinations (Experimental)"]
@@ -43,41 +38,49 @@ class BokehApp(object):
 
         # Variables and Objects
         color_mapping = ColorMap()
-        month_format = "%Y-%m"
+        self.month_format = "%Y-%m"  # TODO: move to bkserver
         category_sep = category_sep
 
         # Settings Object
         self.settings = Settings(self.original_expense_dataframe[self.category],
                                  self.original_expense_dataframe[self.all],
                                  self.original_expense_dataframe[self.date],
-                                 month_format,
+                                 self.month_format,
                                  category_sep,
                                  self.category_types,
                                  self.observer,
                                  self)
 
+
+
         # View Objects
         self.category_view = Category(self.category, self.monthyear, self.price, self.product,
-                                 self.date, self.currency, self.shop, month_format, color_mapping)
+                                 self.date, self.currency, self.shop, self.month_format, color_mapping)
         self.overview_view = Overview(self.category, self.monthyear, self.price, self.product,
-                                 self.date, self.currency, self.shop, month_format, server_date, color_mapping)
+                                 self.date, self.currency, self.shop, self.month_format, server_date, color_mapping)
         self.trends_view = Trends(self.category, self.monthyear, self.price, self.product,
-                                self.date, self.currency, self.shop, month_format, color_mapping)
+                                self.date, self.currency, self.shop, self.month_format, color_mapping)
 
 
         # State Variables
         self.chosen_category_column = self.category
+        self.current_chosen_categories = None
+        self.current_chosen_months = None
 
-        # needs to be updated at the end
+        # needs to be updated at the end for the observer decorator
         self.settings.initialize_settings_variables()
 
+
     def category_gridplot(self):
+        self.__update_current_expense_dataframe()
         return self.category_view.gridplot(self.current_expense_dataframe, self.settings.chosen_categories)
 
     def overview_gridplot(self):
+        self.__update_current_expense_dataframe()
         return self.overview_view.gridplot(self.current_expense_dataframe, self.current_income_dataframe)
 
     def trends_gridplot(self):
+        self.__update_current_expense_dataframe()
         return self.trends_view.gridplot(self.current_expense_dataframe)
 
     def settings_categories(self):
@@ -89,21 +92,46 @@ class BokehApp(object):
     @observer.register
     def update_on_change(self, key, value):
         key_func_dict = {
-            "chosen_categories": self.__update_current_expense_dataframe,
-            "chosen_category_type": self.__update_category_choice
+            "chosen_categories": self.__update_current_chosen_categories,
+            "chosen_category_type": self.__update_category_choice,
+            "chosen_months": self.__update_current_chosen_months
              }
 
         func = key_func_dict[key]
-        func()
+        func(value)
+
+    def __update_current_chosen_categories(self, categories):
+        self.current_chosen_categories = categories
+
+    def __update_current_chosen_months(self, months):
+        self.current_chosen_months = months
+
+    def __update_category_choice(self, category_type):
+
+        d = {
+            0: self.category,
+            1: self.all,
+            2: self.all
+        }
+
+        chosen_index = category_type
+        self.chosen_category_column = d[chosen_index]
+
+        for obj in [self.overview_view, self.trends_view, self.category_view]:
+            obj.change_category_column(self.chosen_category_column)
 
     def __update_current_expense_dataframe(self):
 
-        category_type = self.settings.chosen_category_type
+        category_type = self.chosen_category_column
+        months = pd.to_datetime(self.current_chosen_months).strftime(self.month_format)
 
+        month_cond = np.isin(self.original_expense_dataframe[self.monthyear], months)
+
+        # Last Category Type is Experimental
         if category_type != len(self.category_types):
 
-            unchosen_cats = set(self.settings.all_categories) - set(self.settings.chosen_categories)
-            df = self.original_expense_dataframe
+            unchosen_cats = set(self.settings.all_categories) - set(self.current_chosen_categories)
+            df = self.original_expense_dataframe[month_cond]
 
             for cat in unchosen_cats:
                 cond = df[self.chosen_category_column].str.contains(cat)
@@ -112,123 +140,8 @@ class BokehApp(object):
             self.current_expense_dataframe = df
 
         else:
-            cats = self.settings.chosen_categories
+            cats = self.current_chosen_categories
             cond = np.isin(self.original_expense_dataframe[self.chosen_category_column], cats)
-            self.current_expense_dataframe = self.original_expense_dataframe[cond]
-
-    def __update_category_choice(self):
-
-        d = {
-            0: self.category,
-            1: self.all,
-            2: self.all
-        }
-
-        chosen_index = self.settings.chosen_category_type
-        self.chosen_category_column = d[chosen_index]
-
-        for obj in [self.overview_view, self.trends_view, self.category_view]:
-            obj.change_category_column(self.chosen_category_column)
+            self.current_expense_dataframe = self.original_expense_dataframe[cond & month_cond]
 
 
-
-
-    #TODO: category type radio buttons
-
-    # Category Type radio buttons
-    # TODO: functionality of Category Type
-    #category_type_buttons = RadioGroup(labels=self.category_types,
-    #                                   active=0)
-
-    ########## old functions ##########
-
-    def trends(self, month_name):
-
-        agg = self.current_expense_dataframe.groupby([month_name]).sum().reset_index().sort_values(by=month_name)
-        source = ColumnDataSource(agg)
-
-        p = figure(width=480, height=480, x_range=agg[month_name])
-        p.vbar(x=month_name, width=0.9, top='Price', source=source, color='#8CA8CD')
-
-        p.xaxis.major_tick_line_color = None
-        p.xaxis.minor_tick_line_color = None
-        p.yaxis.major_tick_line_color = None
-        p.yaxis.minor_tick_line_color = None
-
-        p.yaxis[0].formatter = NumeralTickFormatter(format="0.0a")
-
-        p.xaxis.axis_line_color = "#C7C3C3"
-        p.yaxis.axis_line_color = "#C7C3C3"
-
-        p.xaxis.major_label_text_color = "#8C8C8C"
-        p.yaxis.major_label_text_color = "#8C8C8C"
-
-        return p
-
-    def old_category(self):
-        unique_categories = self.current_expense_dataframe['Category'].unique().tolist()
-        unique_categories.sort()
-
-        months = self.current_expense_dataframe['MonthYear'].unique().tolist()
-        months.sort()
-
-        df = self.current_expense_dataframe[self.current_expense_dataframe['Category'] == unique_categories[0]]
-        agg = df.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
-        source = ColumnDataSource(data=agg)
-
-        p = figure(width=360, height=360, x_range=months)
-        p.vbar(x='MonthYear', top='Price', width=0.9, source=source, color='#8CA8CD')
-
-        p.xaxis.major_tick_line_color = None
-        p.xaxis.minor_tick_line_color = None
-        p.yaxis.major_tick_line_color = None
-        p.yaxis.minor_tick_line_color = None
-
-        p.yaxis[0].formatter = NumeralTickFormatter(format="0.0a")
-
-        p.xaxis.axis_line_color = "#C7C3C3"
-        p.yaxis.axis_line_color = "#C7C3C3"
-
-        p.xaxis.major_label_text_color = "#8C8C8C"
-        p.yaxis.major_label_text_color = "#8C8C8C"
-
-        def callback(attr, old, new):
-            if new != old:
-                df = self.current_expense_dataframe[self.current_expense_dataframe['Category'] == new]
-                agg = df.groupby(['MonthYear']).sum().reset_index().sort_values(by='MonthYear')
-                source.data = ColumnDataSource(agg).data
-
-        # menu = list(zip(unique_categories, unique_categories))
-        dropdown = Select(title='Category:', value=unique_categories[0], options=unique_categories)
-        dropdown.on_change('value', callback)
-
-        return column(dropdown, p)
-
-    def some_data(self):
-        agg = self.current_expense_dataframe.groupby(['MonthYear']).sum().reset_index()
-
-        val = agg['Price'].mean()
-        text = 'Average expenses are: <p style="color:#9c2b19"> {} </p>'.format(val)
-        t = Div(text=text, id="some_data_text")
-
-        return t
-
-    def test_table(self):
-
-        agg = self.current_expense_dataframe.groupby(["MonthYear", "Category"]).sum()
-        month_prices = agg.reset_index().groupby(["MonthYear"]).sum()
-        agg = agg.merge(month_prices, how="inner", left_index=True, right_index=True).reset_index().sort_values(by=["MonthYear", "Category"])
-        source = ColumnDataSource(agg)
-
-        print(agg.columns)
-
-        columns = [
-            TableColumn(field="MonthYear", title="Month"),
-            TableColumn(field="Category", title="Category"),
-            TableColumn(field="Price_x", title="Price"),
-            TableColumn(field="Price_y", title="MonthPrice")
-        ]
-
-        data_table2 = DataTable(source=source, columns=columns, width=480, height=240)
-
-        return data_table2
