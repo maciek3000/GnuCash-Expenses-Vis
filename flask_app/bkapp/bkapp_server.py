@@ -20,8 +20,10 @@ class BokehServer(object):
     """
 
     def __init__(self, file_path, port, col_mapping, server_date):
-        gnucash_parser = GnuCashDBParser(file_path)
-        self.bkapp = BokehApp(gnucash_parser.get_expenses_df(), gnucash_parser.get_income_df(), col_mapping, server_date)
+        category_sep = ":"
+        gnucash_parser = GnuCashDBParser(file_path, category_sep=category_sep)
+        self.bkapp = BokehApp(gnucash_parser.get_expenses_df(), gnucash_parser.get_income_df(),
+                              col_mapping, server_date, category_sep)
         self.port = port
         self.views = {
             '/trends': self.trends,
@@ -36,6 +38,7 @@ class BokehServer(object):
         self.theme = Theme(filename=os.path.join(os.path.dirname(os.path.realpath(__file__)), "theme.yaml"))
 
     def settings_month_range(self, doc):
+
         fig = self.bkapp.settings_month_range()
         doc.add_root(fig)
         doc.theme = self.theme
