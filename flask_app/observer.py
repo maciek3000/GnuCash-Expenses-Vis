@@ -14,7 +14,7 @@ class Observer(object):
         return callback
 
     @classmethod
-    def watched_property(cls, observer, key):
+    def watched_property(cls, observer, key, obj_to_notify):
         actual_key = "_{}".format(key)
 
         def getter(obj):
@@ -23,6 +23,7 @@ class Observer(object):
         def setter(obj, value):
             obs = getattr(obj, observer)
             setattr(obj, actual_key, value)
-            obs.notify(obj, key, value)
+            obj_notify = getattr(obj, obj_to_notify)
+            obs.notify(obj_notify, key, value)
 
         return property(fget=getter, fset=setter)
