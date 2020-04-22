@@ -70,6 +70,9 @@ def from_account_two(book):
 
 # ========== gnucash_db_parser ========== #
 
+def category_sep_for_test():
+    return ":"
+
 
 @pytest.fixture
 def example_book_path():
@@ -80,7 +83,7 @@ def example_book_path():
 
 @pytest.fixture
 def gnucash_db_parser_example_book(example_book_path):
-    gdbp = GnuCashDBParser(file_path=example_book_path)
+    gdbp = GnuCashDBParser(file_path=example_book_path, category_sep=category_sep_for_test())
     return gdbp
 
 
@@ -188,7 +191,7 @@ def simple_book_path():
 
 @pytest.fixture
 def gnucash_db_parser_simple_book(simple_book_path):
-    gdbp = GnuCashDBParser(simple_book_path)
+    gdbp = GnuCashDBParser(simple_book_path, category_sep=category_sep_for_test())
     return gdbp
 
 # ========== bkapp ========== #
@@ -254,6 +257,7 @@ def bk_category(gnucash_db_parser_example_book):
     columns = bk_column_names()
     month_format_category = month_format()
     color_map = ColorMap()
+    category_sep = category_sep_for_test()
 
     args = columns + [month_format_category, color_map]
 
