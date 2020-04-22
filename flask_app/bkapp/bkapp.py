@@ -20,8 +20,9 @@ from .pandas_functions import create_combinations_of_sep_values
 class BokehApp(object):
 
     observer = Observer()
+    category_types = ["Simple", "Expanded", "Combinations (Experimental)"]
 
-    def __init__(self, expense_dataframe, income_dataframe, col_mapping, server_date):
+    def __init__(self, expense_dataframe, income_dataframe, col_mapping, server_date, category_sep):
 
         # DataFrames
         self.original_expense_dataframe = expense_dataframe
@@ -43,13 +44,17 @@ class BokehApp(object):
         # Variables and Objects
         color_mapping = ColorMap()
         month_format = "%Y-%m"
+        category_sep = category_sep
 
         # Settings Object
         self.settings = Settings(self.original_expense_dataframe[self.category],
                                  self.original_expense_dataframe[self.all],
                                  self.original_expense_dataframe[self.date],
                                  month_format,
-                                 self.observer)
+                                 category_sep,
+                                 self.category_types,
+                                 self.observer,
+                                 self)
 
         # View Objects
         self.category_view = Category(self.category, self.monthyear, self.price, self.product,
@@ -60,8 +65,14 @@ class BokehApp(object):
                                 self.date, self.currency, self.shop, month_format, color_mapping)
 
 
+        # State Variables
+        self.chosen_category_column = self.category
+
+        # needs to be updated at the end
+        self.settings.initialize_settings_variables()
+
     def category_gridplot(self):
-        return self.category_view.gridplot(self.current_expense_dataframe)
+        return self.category_view.gridplot(self.current_expense_dataframe, self.settings.chosen_categories)
 
     def overview_gridplot(self):
         return self.overview_view.gridplot(self.current_expense_dataframe, self.current_income_dataframe)
@@ -75,19 +86,49 @@ class BokehApp(object):
     def settings_month_range(self):
         return self.settings.month_range_options()
 
-
     @observer.register
-    def print_change(self, key, value):
-        print("New value for {} is: {}".format(key, value))
+    def update_on_change(self, key, value):
+        key_func_dict = {
+            "chosen_categories": self.__update_current_expense_dataframe,
+            "chosen_category_type": self.__update_category_choice
+             }
+
+        func = key_func_dict[key]
+        func()
 
     def __update_current_expense_dataframe(self):
-        pass
 
-        # self.current_expense_dataframe = self.original_expense_dataframe[self.category]
-        #
-        # chosen_filters = [all_cats[i] for i in new]
-        # cond = np.isin(self.original_expense_dataframe[cat_name], chosen_filters)
-        # self.current_expense_dataframe = self.original_expense_dataframe[cond]
+        category_type = self.settings.chosen_category_type
+
+        if category_type != len(self.category_types):
+
+            unchosen_cats = set(self.settings.all_categories) - set(self.settings.chosen_categories)
+            df = self.original_expense_dataframe
+
+            for cat in unchosen_cats:
+                cond = df[self.chosen_category_column].str.contains(cat)
+                df = df[~cond]
+
+            self.current_expense_dataframe = df
+
+        else:
+            cats = self.settings.chosen_categories
+            cond = np.isin(self.original_expense_dataframe[self.chosen_category_column], cats)
+            self.current_expense_dataframe = self.original_expense_dataframe[cond]
+
+    def __update_category_choice(self):
+
+        d = {
+            0: self.category,
+            1: self.all,
+            2: self.all
+        }
+
+        chosen_index = self.settings.chosen_category_type
+        self.chosen_category_column = d[chosen_index]
+
+        for obj in [self.overview_view, self.trends_view, self.category_view]:
+            obj.change_category_column(self.chosen_category_column)
 
 
 
