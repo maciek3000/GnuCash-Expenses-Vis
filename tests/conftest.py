@@ -6,6 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from flask_app.bkapp.color_map import ColorMap
 
+from flask_app.observer import Observer
 from flask_app.gnucash.gnucash_example_creator import GnucashExampleCreator
 from flask_app.gnucash.gnucash_db_parser import GnuCashDBParser
 from flask_app.bkapp.bk_category import Category
@@ -382,3 +383,10 @@ def bk_settings_initialized(bk_settings):
     bk_settings.initialize_settings_variables()
 
     return bk_settings
+
+# ========== Observer ========== #
+
+@pytest.fixture
+def observer():
+    observer = Observer()
+    return observer
