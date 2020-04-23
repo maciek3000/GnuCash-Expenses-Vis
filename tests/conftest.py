@@ -11,6 +11,8 @@ from flask_app.gnucash.gnucash_db_parser import GnuCashDBParser
 from flask_app.bkapp.bk_category import Category
 from flask_app.bkapp.bk_overview import Overview
 from flask_app.bkapp.bk_trends import Trends
+from flask_app.bkapp.bkapp import BokehApp
+from flask_app.bkapp.bk_settings import Settings
 
 # ========== gnucash_example_creator ========== #
 
@@ -194,7 +196,7 @@ def gnucash_db_parser_simple_book(simple_book_path):
     gdbp = GnuCashDBParser(simple_book_path, category_sep=category_sep_for_test())
     return gdbp
 
-# ========== bkapp ========== #
+# ========== variables ========== #
 
 
 def month_format():
@@ -212,6 +214,23 @@ def bk_column_names():
     """Returns list of column names from test piecash books, that are needed in creation of several bokeh views."""
     columns = ["Category", "MonthYear", "Price", "Product", "Date", "Currency", "Shop"]
     return columns
+
+
+def bk_column_mapping():
+
+    d = {
+        "date": "Date",
+        "price": "Price",
+        "currency": "Currency",
+        "product": "Product",
+        "shop": "Shop",
+        "all": "ALL_CATEGORIES",
+        "type": "Type",
+        "category": "Category",
+        "monthyear": "MonthYear"
+    }
+
+    return d
 
 
 @pytest.fixture
@@ -257,7 +276,6 @@ def bk_category(gnucash_db_parser_example_book):
     columns = bk_column_names()
     month_format_category = month_format()
     color_map = ColorMap()
-    category_sep = category_sep_for_test()
 
     args = columns + [month_format_category, color_map]
 
@@ -325,8 +343,43 @@ def bk_trends_initialized(bk_trends):
 
     return bk_trends
 
-# ========== bk_settings ========== #
+# ========== bkapp ========== #
+
 
 @pytest.fixture
-def bk_settings(gnucash_db_parser_example_book):
-    pass
+def bkapp(gnucash_db_parser_example_book):
+    # expense_dataframe, income_dataframe, col_mapping, server_date, category_sep
+
+    bkapp = BokehApp(gnucash_db_parser_example_book.get_expenses_df(), gnucash_db_parser_example_book.get_income_df(),
+                     bk_column_mapping(), datetime(year=2019, month=2, day=1), category_sep_for_test())
+
+    return bkapp
+
+# ========== bk_settings ========== #
+
+
+@pytest.fixture
+def bk_settings(gnucash_db_parser_example_book, bkapp):
+    df = gnucash_db_parser_example_book.get_expenses_df()
+    mapping = bk_column_mapping()
+    cat_types = ["Simple", "Extended", "Combinations"]
+    settings = Settings(
+        df[mapping["category"]],
+        df[mapping["all"]],
+        df[mapping["date"]],
+        month_format(),
+        category_sep_for_test(),
+        cat_types,
+        bkapp.observer,
+        bkapp
+    )
+
+    return settings
+
+
+@pytest.fixture
+def bk_settings_initialized(bk_settings):
+
+    bk_settings.initialize_settings_variables()
+
+    return bk_settings

@@ -64,7 +64,7 @@ class Settings(object):
 
     def __category_gridplot(self):
 
-        if not self.are_categories_initialized:
+        if self.are_categories_initialized is False:
             self.__initialize_categories()
 
         chosen_index = self.chosen_category_type
@@ -102,7 +102,7 @@ class Settings(object):
 
     def __month_range_gridplot(self):
 
-        if not self.is_month_range_initialized:
+        if self.is_month_range_initialized is False:
             self.__initialize_months()
 
 
@@ -123,7 +123,6 @@ class Settings(object):
         return fig
 
     def __initialize_categories(self):
-
         simple = self.original_simple_categories.sort_values().unique().tolist()
         extended = self.original_extended_categories.sort_values().unique().tolist()
         combinations = create_combinations_of_sep_values(extended, self.category_sep)
@@ -143,7 +142,7 @@ class Settings(object):
         start_date = self.original_dates.min()
         stop_date = self.original_dates.max()
 
-        all_dates_range = pd.to_datetime(pd.date_range(start_date, stop_date, freq="M")).tolist()
+        all_dates_range = pd.to_datetime(pd.date_range(start_date, stop_date, freq="MS")).tolist()
 
         self.all_months = all_dates_range
         self.chosen_months = all_dates_range
@@ -170,10 +169,12 @@ class Settings(object):
     def __update_chosen_categories_on_new(self, new):
         self.chosen_categories = [self.all_categories[x] for x in new]
 
-
     def __create_timetuple_string_from_timestamp(self, single_tuple,  date_format):
+        # checking for Timestamp as they are in Slider Values initially (before User interaction)
         if type(single_tuple[0]) is pd.Timestamp:
-            single_tuple = tuple([x.timestamp() for x in single_tuple])
+            single_tuple = tuple([x.timestamp() * 1e3 for x in single_tuple])
+
+        # divided by 1000 (1e3) as DateRangeSlider provides timestamp multiplied by thousand
         val = tuple(map(lambda x: datetime.fromtimestamp(float(x) / 1e3).strftime(date_format), single_tuple))
         return val
 
