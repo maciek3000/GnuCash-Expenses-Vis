@@ -140,7 +140,7 @@ def test_update_current_expense_dataframe_month_only(bkapp, bk_months, time_tupl
 def test_update_current_expense_dataframe_month_categories(bkapp, chosen_categories, chosen_months_tuple):
     """Testing if update_current_expense_dataframe function correctly updates the dataframe.
     Months and Category Filters combined."""
-    
+
     date_range = pd.date_range(chosen_months_tuple[0], chosen_months_tuple[1], freq="MS")
     expected_date_range = date_range.strftime("%Y-%m").tolist()
 

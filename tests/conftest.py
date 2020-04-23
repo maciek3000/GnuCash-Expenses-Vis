@@ -320,7 +320,7 @@ def bk_category_chosen_category():
 
 
 @pytest.fixture
-def bk_category(gnucash_db_parser_example_book):
+def bk_category(gnucash_db_parser_example_book, bk_months):
     """Returns initialized bk_category Object.
 
         Set properties are:
@@ -337,7 +337,7 @@ def bk_category(gnucash_db_parser_example_book):
 
     category = Category(*args)
     category.chosen_category = bk_category_chosen_category()
-    category.months = bk_months()
+    category.months = bk_months
     category.original_df = gnucash_db_parser_example_book.get_expenses_df()
     return category
 
@@ -354,7 +354,7 @@ def bk_category_initialized(bk_category):
 
 
 @pytest.fixture
-def bk_overview(gnucash_db_parser_example_book):
+def bk_overview(gnucash_db_parser_example_book, bk_months):
     columns = bk_column_names()
     test_date = datetime(year=2019, month=2, day=1)
     month_format_overview = month_format()
@@ -362,7 +362,7 @@ def bk_overview(gnucash_db_parser_example_book):
 
     args = columns + [month_format_overview, test_date, color_map]
     overview = Overview(*args)
-    overview.months = bk_months()
+    overview.months = bk_months
     overview.original_expense_df = gnucash_db_parser_example_book.get_expenses_df()
     overview.original_income_df = gnucash_db_parser_example_book.get_income_df()
 
@@ -380,14 +380,14 @@ def bk_overview_initialized(bk_overview):
 
 
 @pytest.fixture
-def bk_trends(gnucash_db_parser_example_book):
+def bk_trends(gnucash_db_parser_example_book, bk_months):
     columns = bk_column_names()
     month_format_trends = month_format()
     color_map = ColorMap()
 
     args = columns + [month_format_trends, color_map]
     trends = Trends(*args)
-    trends.months = bk_months()
+    trends.months = bk_months
     trends.original_expense_df = gnucash_db_parser_example_book.get_expenses_df()
 
     return trends
