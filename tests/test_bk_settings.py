@@ -55,7 +55,7 @@ def test_update_categories_on_category_type_change(bk_settings_initialized, inde
     expected_list_of_active = list(range(len(expected_list_of_labels)))
 
     # called to update .checkbox_group
-    grid = bk_settings_initialized._Settings__category_gridplot()
+    grid = bk_settings_initialized.category_options()
     bk_settings_initialized._Settings__update_categories_on_category_type_change(index)
 
     assert bk_settings_initialized.chosen_category_type == index

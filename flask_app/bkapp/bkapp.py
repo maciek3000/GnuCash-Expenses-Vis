@@ -45,7 +45,6 @@ class BokehApp(object):
         self.settings = Settings(self.original_expense_dataframe[self.category],
                                  self.original_expense_dataframe[self.all],
                                  self.original_expense_dataframe[self.date],
-                                 self.month_format,
                                  category_sep,
                                  self.category_types,
                                  self.observer,

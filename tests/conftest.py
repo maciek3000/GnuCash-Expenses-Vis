@@ -367,7 +367,6 @@ def bk_settings(gnucash_db_parser_example_book, bkapp):
         df[mapping["category"]],
         df[mapping["all"]],
         df[mapping["date"]],
-        month_format(),
         category_sep_for_test(),
         cat_types,
         bkapp.observer,
