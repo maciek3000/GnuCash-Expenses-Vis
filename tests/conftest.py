@@ -203,7 +203,7 @@ def gnucash_db_parser_simple_book(simple_book_path):
 def month_format():
     return "%Y-%m"
 
-
+@pytest.fixture
 def bk_months():
     """Returns list of ALL months used in creation of bk_category object."""
     months = ["2019-{x:02d}".format(x=x) for x in range(1, 13)]
@@ -235,8 +235,8 @@ def bk_column_mapping():
 
 
 @pytest.fixture
-def bk_categories():
-    """Returns list of all categories used by some bk_category tests."""
+def bk_categories_simple():
+    """Returns list of all categories used by some tests."""
 
     categories = [
         "Clothes",
@@ -255,6 +255,61 @@ def bk_categories():
     ]
     return categories
 
+
+@pytest.fixture
+def bk_categories_extended():
+    """Returns list of all "extended" categories used by some tests."""
+
+    categories = [
+        "Expenses:Family:Bathroom:Personal - John",
+        "Expenses:Family:Bathroom:Personal - Susan",
+        "Expenses:Family:Bathroom:Toilet",
+        "Expenses:Family:Car:Petrol",
+        "Expenses:Family:Flat:Rent",
+        "Expenses:Family:Flat:Water and Electricity",
+        "Expenses:Family:Grocery:Bread",
+        "Expenses:Family:Grocery:Chips",
+        "Expenses:Family:Grocery:Eggs",
+        "Expenses:Family:Grocery:Fruits and Vegetables",
+        "Expenses:Family:Grocery:Meat",
+        "Expenses:Family:Other",
+        "Expenses:John's Expenses:Clothes",
+        "Expenses:Susan's Expenses:Clothes"
+    ]
+
+    return categories
+
+
+@pytest.fixture
+def bk_categories_combinations():
+    """Returns list of all "combination" categories used by some tests."""
+
+    categories = [
+        'Expenses',
+        'Expenses:Family',
+        'Expenses:Family:Bathroom',
+        'Expenses:Family:Bathroom:Personal - John',
+        'Expenses:Family:Bathroom:Personal - Susan',
+        'Expenses:Family:Bathroom:Toilet',
+        'Expenses:Family:Car',
+        'Expenses:Family:Car:Petrol',
+        'Expenses:Family:Flat',
+        'Expenses:Family:Flat:Rent',
+        'Expenses:Family:Flat:Water and Electricity',
+        'Expenses:Family:Grocery',
+        'Expenses:Family:Grocery:Bread',
+        'Expenses:Family:Grocery:Chips',
+        'Expenses:Family:Grocery:Eggs',
+        'Expenses:Family:Grocery:Fruits and Vegetables',
+        'Expenses:Family:Grocery:Meat',
+        'Expenses:Family:Other',
+        "Expenses:John's Expenses",
+        "Expenses:John's Expenses:Clothes",
+        "Expenses:Susan's Expenses",
+        "Expenses:Susan's Expenses:Clothes"
+    ]
+
+    return categories
 # ========== bk_category ========== #
 
 
@@ -349,10 +404,9 @@ def bk_trends_initialized(bk_trends):
 
 @pytest.fixture
 def bkapp(gnucash_db_parser_example_book):
-    # expense_dataframe, income_dataframe, col_mapping, server_date, category_sep
 
     bkapp = BokehApp(gnucash_db_parser_example_book.get_expenses_df(), gnucash_db_parser_example_book.get_income_df(),
-                     bk_column_mapping(), datetime(year=2019, month=2, day=1), category_sep_for_test())
+                     bk_column_mapping(), month_format(), datetime(year=2019, month=2, day=1), category_sep_for_test())
 
     return bkapp
 
@@ -385,6 +439,7 @@ def bk_settings_initialized(bk_settings):
     return bk_settings
 
 # ========== Observer ========== #
+
 
 @pytest.fixture
 def observer():

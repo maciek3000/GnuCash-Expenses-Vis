@@ -21,9 +21,10 @@ class BokehServer(object):
 
     def __init__(self, file_path, port, col_mapping, server_date):
         category_sep = ":"
-        gnucash_parser = GnuCashDBParser(file_path, category_sep=category_sep)
+        monthyear_format = "%Y-%m"
+        gnucash_parser = GnuCashDBParser(file_path, category_sep=category_sep, monthyear_format=monthyear_format)
         self.bkapp = BokehApp(gnucash_parser.get_expenses_df(), gnucash_parser.get_income_df(),
-                              col_mapping, server_date, category_sep)
+                              col_mapping, monthyear_format, server_date, category_sep)
         self.port = port
         self.views = {
             '/trends': self.trends,

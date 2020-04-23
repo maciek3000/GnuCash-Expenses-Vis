@@ -38,6 +38,10 @@ class Settings(object):
 
 
         """
+
+    # TODO: synchronize chosen months and categories - it might happen that there is no such category
+    # in chosen Month Range
+
     chosen_categories = Observer.watched_property("observer", "chosen_categories", "parent")
     chosen_category_type = Observer.watched_property("observer", "chosen_category_type", "parent")
     chosen_months = Observer.watched_property("observer", "chosen_months", "parent")

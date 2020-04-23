@@ -78,10 +78,10 @@ def test_initialize_grid_elements(bk_category):
             ("Rent", 24000)
     )
 )
-def test_update_chosen_category_dataframe(bk_category, bk_categories, category, expected_sum):
+def test_update_chosen_category_dataframe(bk_category, bk_categories_simple, category, expected_sum):
     """Testing if updating DataFrame based on provided category functions correctly."""
 
-    categories = bk_categories
+    categories = bk_categories_simple
     categories.remove(category)
 
     bk_category.chosen_category = category

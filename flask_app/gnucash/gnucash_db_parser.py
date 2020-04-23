@@ -24,7 +24,7 @@ class GnuCashDBParser(object):
         "monthyear": "MonthYear"
     }
 
-    def __init__(self, file_path, columns_mapping=None, category_sep=":"):
+    def __init__(self, file_path, columns_mapping=None, category_sep=":", monthyear_format="%Y-%m"):
 
         mapping = columns_mapping if columns_mapping else self.default_col_mapping
         self.__create_mapping(mapping)
@@ -33,6 +33,7 @@ class GnuCashDBParser(object):
         self.expenses_df = None
         self.income_df = None
         self.category_sep = category_sep
+        self.monthyear_format = monthyear_format
 
     def __create_mapping(self, column_mapping):
 
@@ -122,7 +123,7 @@ class GnuCashDBParser(object):
         df[self.date] = df[self.date].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
 
         # adding MonthYear column for easier analysis
-        df[self.monthyear] = df[self.date].dt.strftime('%Y-%m')
+        df[self.monthyear] = df[self.date].dt.strftime(self.monthyear_format)
 
         # dropping columns that are no longer needed
         df = df.drop([self.name, self.split, self.account], axis=1)

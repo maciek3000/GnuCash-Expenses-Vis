@@ -5,10 +5,10 @@ from datetime import datetime
 from flask_app.bkapp.pandas_functions import create_combinations_of_sep_values
 
 
-def test_initialize_categories(bk_settings, bk_categories):
+def test_initialize_categories(bk_settings, bk_categories_simple):
     """Testing if Category variables are being initialized correctly."""
 
-    expected_simple_categories = sorted(bk_categories)
+    expected_simple_categories = sorted(bk_categories_simple)
 
     expected_extended_categories = bk_settings.original_extended_categories.sort_values().unique().tolist()
     expected_combination_categories = create_combinations_of_sep_values(
