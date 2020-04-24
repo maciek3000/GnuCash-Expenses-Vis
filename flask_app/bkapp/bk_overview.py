@@ -641,7 +641,7 @@ class Overview(object):
             formatter = FuncTickFormatter(code="""
                 var return_tick;
                 return_tick = tick;
-                if (((index + 1) % 2) == 0) {
+                if ((((index + 1) % 2) == 0) || (tick.length > 35)) {
                     return_tick = '';
                 }
                 return return_tick;

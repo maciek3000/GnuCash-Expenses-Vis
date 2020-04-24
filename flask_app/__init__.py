@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from datetime import datetime
 from multiprocessing import Process
+import webbrowser
 
 from . import trends, overview, category, settings
 from .bkapp.bkapp_server import BokehServer
@@ -31,8 +32,9 @@ def create_app(test_config=None):
     category_sep = ":"
     monthyear_format = "%Y-%m"
 
-    bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_examples', 'example_gnucash.gnucash')
+    bk_file_path_db = None
 
+    # checking if there is any file provided in .cfg file and if it is SQLite file
     with open(os.path.join(app.root_path, "gnucash_file_path.cfg"), "r") as g_cfg:
         lines = g_cfg.readlines()
         for line in lines:
@@ -41,10 +43,11 @@ def create_app(test_config=None):
                 if os.path.isfile(address) and os.path.splitext(address)[1] == ".gnucash":
                         if GnuCashDBParser.check_file(address):
                             bk_file_path_db = address
-                else:
-                    print("Not a correct .gnucash file - perhaps it was saved as XML and not as SQL?\n"
-                          "Using Test file instead.")
 
+    if bk_file_path_db is None:
+        print("Not a correct .gnucash file - perhaps it was saved as XML and not as SQL?\n"
+              "Using Test file instead.")
+        bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_examples', 'example_gnucash.gnucash')
 
     gnucash_parser = GnuCashDBParser(bk_file_path_db, category_sep=category_sep, monthyear_format=monthyear_format)
 
@@ -63,7 +66,7 @@ def create_app(test_config=None):
 
     server_date = datetime.now()
 
-    # bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash')
+    # bkapp server
     bk_port = 9090
     bkapp_server_address = 'http://127.0.0.1:9090/'
 
@@ -77,12 +80,10 @@ def create_app(test_config=None):
         category_sep
     )
 
-
     bkserver_process = Process(target=bkapp_server.bkworker)
     bkserver_process.start()
 
-    # Blueprints section
-
+    # Blueprints
     bp_trends = trends.create_bp(bkapp_server_address)
     bp_overview = overview.create_bp(bkapp_server_address)
     bp_category = category.create_bp(bkapp_server_address)
@@ -94,5 +95,8 @@ def create_app(test_config=None):
     app.register_blueprint(bp_settings)
 
     app.add_url_rule('/', endpoint='overview')
+
+    # Opening new browser window on load
+    webbrowser.open_new("http://127.0.0.1:5000/")
 
     return app

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
-from .pandas_functions import unique_values_from_column, create_combinations_of_sep_values
+from .pandas_functions import unique_values_from_column
 
 from bokeh.models import ColumnDataSource, Select, DataTable, TableColumn, DateFormatter, NumberFormatter, Circle, Label
 from bokeh.models import NumeralTickFormatter

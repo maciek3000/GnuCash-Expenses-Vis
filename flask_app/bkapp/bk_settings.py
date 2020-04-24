@@ -121,6 +121,7 @@ class Settings(object):
         checkbox_group = CheckboxGroup(
             labels=self.all_categories,
             active=[self.all_categories.index(x) for x in self.chosen_categories],
+            css_classes=["category_checkbox"]
         )
 
         # set as attribute for RadioGroup Buttons Updates to have access to it

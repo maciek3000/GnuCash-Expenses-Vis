@@ -27,3 +27,17 @@
     max-height: 0;
     transition: max-height 0.2s ease-out;
 }
+
+.bk.month_range_slider {
+    margin-left: 32px !important;
+}
+
+.bk.category_types_buttons {
+    font-family: inherit !important;
+    font-size: 1.3em;
+}
+
+.bk.category_checkbox {
+    font-size: 1.2em;
+}
+

@@ -1,8 +1,4 @@
 from flask import Blueprint, render_template, request
-from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import SubmitField
-from werkzeug import secure_filename
 
 from bokeh.embed import server_document
 

@@ -127,16 +127,3 @@ html {
 .hover_tooltip span:last-child {
     color: black;
 }
-
-/* view-specific */
-
-/*
-#trends_text {border: 0px solid black; width: 30%; }
-#trends_barplot {border: 0px solid black; width: 70%;}
-#trends_barplot div {float: right; }
-
-#overview_text {border: 0px solid black; width: 40%; }
-#overview_stats {border: 0px solid black; width: 60%; text-align: center; }
-
-
-*/
