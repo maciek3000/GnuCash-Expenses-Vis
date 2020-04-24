@@ -1,13 +1,20 @@
 import os
-from flask import Flask, render_template
-from bokeh.embed import server_document
+from flask import Flask
 from datetime import datetime
+from multiprocessing import Process
+
+from . import trends, overview, category, settings
+from .bkapp.bkapp_server import BokehServer
+from .gnucash.gnucash_db_parser import GnuCashDBParser
 
 def create_app(test_config=None):
+
     # app factory
     app = Flask(__name__, instance_relative_config=None)
+
     app.config.from_mapping(
         SECRET_KEY='dev',
+        ENV="development"
     )
 
     if test_config is None:
@@ -21,14 +28,25 @@ def create_app(test_config=None):
         pass
 
     # bkapp section
+    category_sep = ":"
+    monthyear_format = "%Y-%m"
 
-    from .bkapp.bkapp_server import BokehServer
-
-    # test file and names, later on it will be provided by the user
     bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_examples', 'example_gnucash.gnucash')
-    # bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash')
-    bk_port = 9090
-    bkapp_server_address = 'http://127.0.0.1:9090/'
+
+    with open(os.path.join(app.root_path, "gnucash_file_path.cfg"), "r") as g_cfg:
+        lines = g_cfg.readlines()
+        for line in lines:
+            if "GNUCASH_FILE_PATH" in line:
+                address = line.split("=")[1]
+                if os.path.isfile(address) and os.path.splitext(address)[1] == ".gnucash":
+                        if GnuCashDBParser.check_file(address):
+                            bk_file_path_db = address
+                else:
+                    print("Not a correct .gnucash file - perhaps it was saved as XML and not as SQL?\n"
+                          "Using Test file instead.")
+
+
+    gnucash_parser = GnuCashDBParser(bk_file_path_db, category_sep=category_sep, monthyear_format=monthyear_format)
 
     # col_mapping can be later provided from the file
     col_mapping = {
@@ -45,19 +63,30 @@ def create_app(test_config=None):
 
     server_date = datetime.now()
 
-    bkapp_server = BokehServer(bk_file_path_db, bk_port, col_mapping, server_date)
+    # bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_files', 'finanse_sql.gnucash')
+    bk_port = 9090
+    bkapp_server_address = 'http://127.0.0.1:9090/'
 
-    from threading import Thread
-    Thread(target=bkapp_server.bkworker).start()
+    bkapp_server = BokehServer(
+        bk_port,
+        col_mapping,
+        gnucash_parser.get_expenses_df(),
+        gnucash_parser.get_income_df(),
+        server_date,
+        monthyear_format,
+        category_sep
+    )
+
+
+    bkserver_process = Process(target=bkapp_server.bkworker)
+    bkserver_process.start()
 
     # Blueprints section
-
-    from . import trends, overview, category, settings
 
     bp_trends = trends.create_bp(bkapp_server_address)
     bp_overview = overview.create_bp(bkapp_server_address)
     bp_category = category.create_bp(bkapp_server_address)
-    bp_settings = settings.create_bp(bkapp_server_address)
+    bp_settings = settings.create_bp(bk_file_path_db, bkapp_server_address)
 
     app.register_blueprint(bp_trends)
     app.register_blueprint(bp_overview)
@@ -65,11 +94,5 @@ def create_app(test_config=None):
     app.register_blueprint(bp_settings)
 
     app.add_url_rule('/', endpoint='overview')
-
-
-    #@app.route('/')
-    #def index():
-    #    script = server_document('http://127.0.0.1:9090/trends')
-    #    return render_template('overview.html', script=script)
 
     return app

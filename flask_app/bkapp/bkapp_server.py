@@ -4,7 +4,6 @@ import os
 from bokeh.server.server import Server
 from bokeh.themes import Theme
 
-from ..gnucash.gnucash_db_parser import GnuCashDBParser
 from .bkapp import BokehApp
 
 
@@ -19,11 +18,10 @@ class BokehServer(object):
     To add a visualization (view), the function has to be defined and then added into self.views dictionary.
     """
 
-    def __init__(self, file_path, port, col_mapping, server_date):
-        category_sep = ":"
-        monthyear_format = "%Y-%m"
-        gnucash_parser = GnuCashDBParser(file_path, category_sep=category_sep, monthyear_format=monthyear_format)
-        self.bkapp = BokehApp(gnucash_parser.get_expenses_df(), gnucash_parser.get_income_df(),
+    def __init__(self, port, col_mapping, expense_dataframe, income_dataframe, server_date,
+                 monthyear_format, category_sep):
+
+        self.bkapp = BokehApp(expense_dataframe, income_dataframe,
                               col_mapping, monthyear_format, server_date, category_sep)
         self.port = port
         self.views = {

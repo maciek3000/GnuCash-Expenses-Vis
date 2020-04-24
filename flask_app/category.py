@@ -5,7 +5,7 @@ def create_bp(bkapp_server_address):
 
     bp = Blueprint('category', __name__)
 
-    @bp.route('/category')
+    @bp.route('/category/')
     def category():
         script = server_document(bkapp_server_address + 'category')
         return render_template('category.html', script=script)

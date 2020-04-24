@@ -35,6 +35,17 @@ class GnuCashDBParser(object):
         self.category_sep = category_sep
         self.monthyear_format = monthyear_format
 
+    def get_expenses_df(self):
+        if self.expenses_df is None:
+            self.expenses_df = self.__create_transactions_df(self.expense_name)
+        return self.expenses_df
+
+    def get_income_df(self):
+        if self.income_df is None:
+            self.income_df = self.__create_transactions_df(self.income_name)
+        return self.income_df
+
+
     def __create_mapping(self, column_mapping):
 
         c = column_mapping
@@ -51,15 +62,6 @@ class GnuCashDBParser(object):
         self.category = c["category"]
         self.monthyear = c["monthyear"]
 
-    def get_expenses_df(self):
-        if self.expenses_df is None:
-            self.expenses_df = self.__create_transactions_df(self.expense_name)
-        return self.expenses_df
-
-    def get_income_df(self):
-        if self.income_df is None:
-            self.income_df = self.__create_transactions_df(self.income_name)
-        return self.income_df
 
     def __create_transactions_df(self, transaction_type):
         # TODO: update desc of columns
@@ -131,3 +133,15 @@ class GnuCashDBParser(object):
         df[self.all] = df[self.all].apply(lambda x: self.category_sep.join(x))
 
         return df
+
+    @classmethod
+    def check_file(cls, file_path):
+        result = False
+
+        try:
+            piecash.open_book(file_path)
+            result = True
+        except piecash.GnucashException:
+            pass
+
+        return result
