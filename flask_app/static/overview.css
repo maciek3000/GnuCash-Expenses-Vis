@@ -1,3 +1,5 @@
+/* Row Layout */
+
 .bk.title_row {
     width: 100% !important;
     font-size: 3em;
@@ -8,6 +10,8 @@
 .bk.title_row > div {
     margin-right: 8px;
 }
+
+/* Month Title & Dropdown */
 
 .bk.month_title, .bk.month_dropdown {
     color: inherit !important;
@@ -43,9 +47,11 @@
     width: auto !important;
     padding: 0px !important;
     background: linear-gradient(to bottom left,transparent 50%,var(--light-gray) 0) bottom left/15px 15px no-repeat,
-        white;
+        white; /* triangle in the corner */
     border-radius: 0px;
 }
+
+/* Last Month Row */
 
 .bk.chosen_month_row {
     width: 100% !important;
@@ -59,12 +65,11 @@
     left: 28% !important;
 }
 
+/* Info Elements Column */
 
 .info_element:first-child, .info_element:nth-child(3) {
     border-top: 1px solid var(--light-gray);
 }
-
-
 
 .bk.info_element span {
     color: var(--normal-link-color);
@@ -80,8 +85,6 @@
 .bk.info_element:first-child, .bk.info_element:nth-child(2) {
     text-align: center;
     color: var(--gray-title);
-/*    color: black;
-    opacity: 0.8; */
 }
 
 
@@ -98,13 +101,10 @@
     padding-top: 8px;
 }
 
+/* Piechart Column */
+
 .bk.piechart_column {
     width: 25% !important;
-}
-
-.bk.barchart_column {
-    width: 48% !important;
-    float: right;
 }
 
 .bk.savings_information {
@@ -137,6 +137,13 @@
 
 #negative_savings {
     color: var(--contrary-color);
+}
+
+/* Bar Chart Column */
+
+.bk.barchart_column {
+    width: 48% !important;
+    float: right;
 }
 
 .bk.category_expenses_title {

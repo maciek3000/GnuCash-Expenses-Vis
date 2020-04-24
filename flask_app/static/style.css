@@ -32,7 +32,7 @@ html {
     overflow: auto;
 }
 
-/* nav */
+/* Navigation Menu Bar */
 
 .menu {
     display: flex;
@@ -89,7 +89,7 @@ html {
     color: var(--background-link-color);
 }
 
-/* content */
+/* Content */
 
 .content {
     padding: 12px 18px;
@@ -101,6 +101,7 @@ html {
     font-family: inherit;
 }
 
+/* Info Column Repeating Across Different Views */
 
 .bk.info_column {
     width: 22% !important;
@@ -114,6 +115,8 @@ html {
     width: 100% !important;
     position: static !important;
 }
+
+/* Hover Tooltip Repeating Across Different Views */
 
 .hover_tooltip {
     color: var(--normal-text-color);

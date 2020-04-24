@@ -1,3 +1,5 @@
+/* Settings Structure */
+
 .settings_title {
     font-size: 3em;
     color: var(--base-color);
@@ -28,9 +30,13 @@
     transition: max-height 0.2s ease-out;
 }
 
+/* Date Range Slider */
+
 .bk.month_range_slider {
     margin-left: 32px !important;
 }
+
+/* Category Radio Buttons and Checkbox Group */
 
 .bk.category_types_buttons {
     font-family: inherit !important;

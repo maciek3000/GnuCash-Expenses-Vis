@@ -46,7 +46,7 @@ def create_app(test_config=None):
 
     if bk_file_path_db is None:
         print("Not a correct .gnucash file - perhaps it was saved as XML and not as SQL?\n"
-              "Using Test file instead.")
+              "Using Test file instead.\n")
         bk_file_path_db = os.path.join(app.root_path, 'gnucash', 'gnucash_examples', 'example_gnucash.gnucash')
 
     gnucash_parser = GnuCashDBParser(bk_file_path_db, category_sep=category_sep, monthyear_format=monthyear_format)

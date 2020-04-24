@@ -45,7 +45,6 @@ class GnuCashDBParser(object):
             self.income_df = self.__create_transactions_df(self.income_name)
         return self.income_df
 
-
     def __create_mapping(self, column_mapping):
 
         c = column_mapping
@@ -61,7 +60,6 @@ class GnuCashDBParser(object):
         self.type = c["type"]
         self.category = c["category"]
         self.monthyear = c["monthyear"]
-
 
     def __create_transactions_df(self, transaction_type):
         # TODO: update desc of columns

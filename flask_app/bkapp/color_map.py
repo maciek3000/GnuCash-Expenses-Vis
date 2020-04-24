@@ -27,4 +27,3 @@ class ColorMap(object):
             "#d1dceb",
             "#e8eef5"
         ]
-

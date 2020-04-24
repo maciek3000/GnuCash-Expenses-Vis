@@ -1,3 +1,5 @@
+/* Title */
+
 .title {
     color: var(--base-color);
     font-size: 3em;
@@ -5,10 +7,11 @@
     padding-bottom: 8px;
 }
 
+/* Row Layout */
+
 .bk.first_row {
     width: 100% !important;
 }
-
 
 .bk.first_row > div:last-child {
     left: 75% !important;
@@ -17,6 +20,12 @@
 .bk.first_row > div:nth-child(2) {
     left: 25% !important;
 }
+
+.bk.second_row {
+    width: 100% !important;
+}
+
+/* Info Column */
 
 .bk.info_column {
     width: 100% !important;
@@ -40,6 +49,8 @@
     font-weight: bold;
 }
 
+/* Monthly Info Elements */
+
 .bk.monthly_class.info_title, .bk.monthly_class span {
     color: var(--contrary-color);
 }
@@ -48,10 +59,7 @@
     color: var(--contrary-color);
 }
 
-.bk.second_row {
-    width: 100% !important;
-}
-
+/* Heatmap */
 
 .bk.heatmap_title {
     font-size: 2em;
