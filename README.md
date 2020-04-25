@@ -46,7 +46,7 @@ Instructions for Linux:
 2. Clone the repository into newly created directory and 
 navigate there:
     ```bash
-    git clone https://github.com/maciek3000/GnuCash-Expenses-Vis.git`
+    git clone https://github.com/maciek3000/GnuCash-Expenses-Vis.git
    cd GnuCash-Expenses-Vis 
    ```
 3. Create new [venv](https://docs.python.org/3/library/venv.html)
