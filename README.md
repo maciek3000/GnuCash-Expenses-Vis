@@ -9,19 +9,27 @@ using Bokeh visualization module. The project was also used
 as a learning ground for the author in terms of simple web 
 development and Bokeh server applications.
 
-Trends View
+*Rundown*
+
+![Rundown](./screenshots/flask_app_rundown.gif)
+
+*Trends View*
+
 ![Trends View](./screenshots/flask_app_trends.png)
 
-flask_app running
+*flask_app running*
+
 ![Flask App Running](./screenshots/flask_app_terminal.png)
+
+
 
 ## Prerequisites
 Python >= 3.6.
 
 There is an example GnuCash file included with the project, 
 so you do not need to have your own to make it work. However, 
-if you <b>do</b> have it, you can include file path to it 
-in <i>gnucash_file_path.cfg</i> after cloning the repository.
+if you **do** have it, you can include file path to it 
+in *gnucash_file_path.cfg* after cloning the repository.
 
 Only SQLite files from GnuCash are accepted for now. If you 
 keep track of your expenses in XML format, you can simply 
@@ -57,7 +65,7 @@ variables and run the application:
    flask run 
    ```
 
-After using ```flask run``` command, local flask server should 
+After using `flask run` command, local flask server should 
 be up and running. New browser window should appear on the 
 initialization - if for whatever reason it doesn't happen, 
 you can manually go to [http://127.0.0.1:5000/](http://127.0.0.1:5000/),
