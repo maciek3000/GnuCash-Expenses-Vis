@@ -13,15 +13,19 @@ development and Bokeh server applications.
 
 ![Rundown](./screenshots/flask_app_rundown.gif)
 
+<br /><br />
+
 *Trends View*
 
 ![Trends View](./screenshots/flask_app_trends.png)
+
+<br /><br />
 
 *flask_app running*
 
 ![Flask App Running](./screenshots/flask_app_terminal.png)
 
-
+<br /><br />
 
 ## Prerequisites
 Python >= 3.6.
