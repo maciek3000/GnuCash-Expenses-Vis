@@ -9,7 +9,11 @@ using Bokeh visualization module. The project was also used
 as a learning ground for the author in terms of simple web 
 development and Bokeh server applications.
 
-Pics go here.
+Trends View
+![Trends View](./screenshots/flask_app_trends.png)
+
+flask_app running
+![Flask App Running](./screenshots/flask_app_terminal.png)
 
 ## Prerequisites
 Python >= 3.6.
@@ -44,13 +48,15 @@ and activate it:
     ```bash
    pip install -r requirements.txt 
    ```
-5. Set flask variables and run the application:
-    ```bash
+   
+## Usage
+While in the GnuCash-Expenses-Vis folder, set flask 
+variables and run the application:
+   ```bash
    export FLASK_APP=flask_app
    flask run 
    ```
-   
-## Usage
+
 After using ```flask run``` command, local flask server should 
 be up and running. New browser window should appear on the 
 initialization - if for whatever reason it doesn't happen, 
